@@ -1,1 +1,1 @@
-- [Ceph Storage](ceph/readme.md)
+- [Ceph Storage](ceph/manuel_kurulum.md)
