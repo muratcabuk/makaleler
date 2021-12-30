@@ -1,0 +1,64 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+# centops kurmak isteseniz generic/ubuntu2004 yeine generic/centos8  yazmanız yeterli
+# diskler şu dizine kaydoluyor /var/lib/libvirt/images/
+
+
+# https://github.com/vagrant-libvirt/vagrant-libvirt
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
+
+Vagrant.configure("2") do |config|
+
+# node1
+config.vm.define "node1" do |node1|
+    node1.vm.box = "generic/ubuntu2004"
+    node1.vm.hostname="node1"
+    node1.vm.network "private_network", ip: "10.200.10.10"
+    
+    node1.vm.provider :libvirt do |lv|
+       lv.memory=2048
+       lv.cpus=1
+       #lv.host = "node1"
+       lv.storage :file, :size => '10G'
+# disk makinaya /dev/vdb olarak eklenecek
+    end 
+ end
+
+
+# node2
+config.vm.define "node2" do |node2|
+    node2.vm.box = "generic/ubuntu2004"
+    node2.vm.hostname="node2"
+    node2.vm.network "private_network", ip: "10.200.10.11"
+    
+    node2.vm.provider :libvirt do |lv|
+       lv.memory=2048
+       lv.cpus=1
+       #lv.host = "node2"
+       lv.storage :file, :size => '10G'
+# disk makinaya /dev/vdb olarak eklenecek
+    end
+ end
+
+
+# node3
+config.vm.define "node3" do |node3|
+    node3.vm.box = "generic/ubuntu2004"
+    node3.vm.hostname="node3"
+    node3.vm.network "private_network", ip: "10.200.10.12"
+    
+    node3.vm.provider :libvirt do |lv|
+       lv.memory=2048
+       lv.cpus=1
+       #lv.host = "node3"
+       lv.storage :file, :size => '10G'
+# disk makinaya /dev/vdb olarak eklenecek
+    end 
+ end
+
+
+
+end
+
