@@ -1,0 +1,50 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+# centos kurmak isteseniz generic/ubuntu2004 yerine generic/centos8  yazmanız yeterli
+
+
+Vagrant.configure("2") do |config|
+
+    # node1
+    config.vm.define "node1" do |node1|
+        node1.vm.box = "generic/ubuntu2004"
+        node1.vm.hostname="node1"
+        node1.vm.network "private_network", ip: "10.200.10.10"
+        
+        node1.vm.provider :virtualbox do |lv|
+           lv.memory=1024
+           lv.cpus=1
+        end 
+     end
+    
+    
+    # node2
+    config.vm.define "node2" do |node2|
+        node2.vm.box = "generic/ubuntu2004"
+        node2.vm.hostname="node2"
+        node2.vm.network "private_network", ip: "10.200.10.11"
+        
+        node2.vm.provider :virtualbox do |lv|
+           lv.memory=1024
+           lv.cpus=1
+    
+        end
+     end
+    
+    
+    # node3
+    config.vm.define "node3" do |node3|
+        node3.vm.box = "generic/ubuntu2004"
+        node3.vm.hostname="node3"
+        node3.vm.network "private_network", ip: "10.200.10.12"
+        
+        node3.vm.provider :virtualbox do |lv|
+           lv.memory=1024
+           lv.cpus=1
+    
+        end 
+     end
+    
+    end
