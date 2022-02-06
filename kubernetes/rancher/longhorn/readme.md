@@ -1,28 +1,71 @@
+# Rancher Longhorn Distributed Storage Kurulumu, Backup ve Restore İşlemleri  
+
+Merhaba Arkadaşalar,
+
+Öncelikle Longhorn nedir nasıl çalışır anlamaya çalışalım.
+
+Longhorn, Rancher firması tarafından Kubernetes için geliştirilmiş dağınık (distributed) block storage sistemidir.
+
+
+![how-longhorn-works.svg](files/how-longhorn-works.svg)
+Kaynak: [Longhorn](https://longhorn.io/docs/1.2.3/concepts/)
+
+Şekilde de görüleceği üzere Longhorn Manager'lar [Daemonset](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) olarak bütün node'larda çalışır ve Kubernetes API ile haberleşir. Yeni bir volume talebi olduğunda yine API üzerinde Longhorn volume [CRD](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) oluşturur. CRD Kubernetes API'sini extend edebilmemiz için Kubenetes'in sunmuş olduğu bir sistem.
+
+Longhorn Manager volume talebini gerçekleştirmek için node üzerinde Longhorn Engine oluşturur ve volume'ü de buna attach eder. Daha sonra volume'un diğer node'larda replica'sını oluşturur. Ancak bu replica'ları aynı anda birden fazla node'da çalışacak uygulamaların yazması ve okuması için çalıştıramayız. Yani Longhorn ile normalde birden fazla pod için tek bir volume oluşturamayız (1.1 versiyonunda bir çözüm gelmiş yazının devamında değineceğiz). Sadece maksimum  availability için bu kopyalar tutulur. Ayağa kaldıracağınız  pod'un volume ile aynı node üzerinde ayağa kalkması gerekmektedir. Yani  bu haliyle Longhorn storage'ları [ReadWriteOnce](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) olacak şekilde erişibilir yapar. Çünkü Longhorn bir distributed file system değildir. Detaylar için [şu başlığı](https://longhorn.io/docs/1.2.3/concepts/#horizontal-scaling-for-kubernetes-workloads-with-persistent-storage) okuyabilirsiniz. Peki hakikaten birden fazla pod oluşturma ihtiyacımız olduğunda ne yapacağız? Bunun için [Longhorn'un tavsiyesi](https://longhorn.io/docs/1.2.3/concepts/#horizontal-scaling-for-kubernetes-workloads-with-persistent-storage) [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) oluşturmamız. Tabii ki bu her zaman ihtiyacımızı karşılamayacaktır.
+
+Bundan dolayı [Longhorn v1.1.0](https://longhorn.io/blog/longhorn-v1.1.0/)  versiyonu ile birlikte ReadWriteMany(RWX) özelliğini desteklediğini duyurmuş. Bunu yaparken de bildiğimiz [NFS](https://tr.wikipedia.org/wiki/A%C4%9F_Dosya_Sistemi)'i kullanıyor. Yani Longhorn doğrudan ReadWriteMany için bir çözüm sunmuyor. Çünkü kendisi zaten doğal bir storage çözümü değil. Sadece elimizdeki storage sistemini Kubernetes ile kullanmamızı sağlayan kullanımı ve anlaması kolay bir çözüm.  
+
+Yani bu durumda önce diskimizde yer alanı NFS olarak paylaşıp daha sonra onun üzerinden volume oluşturuyor. Burada ilk aklımza gelen soru olabilir zaten [Kubernetes NFS'i shared persistent storage](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) olarak destekliyorsa Longhorn'a ne gerek var? Daha önce bahsettiğimiz maksimum  availability, backup/restore yeteneği, monitoring araçlarına vermiş olduğu destek ve bu  yetenekleri UI üzerinden kolaylıkla yönetmemizi sağlıyor olması gibi özellikleri Longhorn'u kullanmamızın en önemli sebepleri diyebiliriz. 
+
+
+Bu yazımızda,
+
+- Rancher'ın Kubernetes deployment aracı olan RKE ile Kubernetes cluster'ı kuracağız
+- Ardından yine Rancher'ın storage çözümü olan Longhorn bileşenini inceleyeceğiz.
+
+
+Temel amacımız 
+- Longhorn storage sistemini kullanan bir ve birden fazla node üzerinde çalışan uygulamlarla test etmek
+- Longhorn'un yedeğini almak ve yedekten dönmek
+
+
+Şimdi kurumlara geçebiliriz.
+
+
+
+
+### Lab Ortamını Kuruyoruz
+
+
+Lab ortamımızı provider olarak [Virtualbox](https://www.virtualbox.org/) kullanarak [Vagrant](https://www.vagrantup.com/) ile yapacağız.
+
+
+- Vagrant kurulumu için [Vagrant resmi sayfasını](https://www.vagrantup.com/downloads) ziyaret ediniz.
+- VirtualBox kurulumu için [VirtualBox resmi sayfasını](https://www.virtualbox.org/wiki/Downloads) ziyaret ediniz. 
+
+
+Vagrant kurulumunda network ayarları,Docker kurulumu ve Kubernetes kurulumu için gerekli işlemler yapılıyor. Ancak doğrudan Longhorn ile ilgili işlemleri manuel olarak yapacağız. Ekstra disk eklemek ve nfs client kurulumu kendimiz yapacağız. 
+
+
+
+
 3 adet makinamız olacak
-
-
-vagrant klasöründeki vagranfile çalıştırdıktan sonra kurumları yapıyoruz.
-
-toplamda 3 makina var 
 
 1. master1 : 10.200.10.41
 2. worker1 : 10.200.10.51
 3. worker2 : 10.200.10.52
 
-### LAB Ortamını Kuruyoruz
-
-Vagrant kurulumu [vagrant resmi sayfasını](https://www.vagrantup.com/downloads) ziyaret ediniz.
+worker node'lara 10 GB'lık disk takacağız. 
 
 
-Host makinamızda ssh'ın kurulu olması gerekiyor. Linux dağıtımlarında Mac OS'da  kurulu geliyor ancak Windows için kurulum yapmak gekiyor.
+Host makinamızda ssh'ın kurulu olması gerekiyor. Linux dağıtımlarında Mac OS'da  kurulu geliyor ancak Windows için kurulum yapmak durumdayız. Alttaki linklerden yardım alabilirsiniz.
 
 - [Windows için kurulum](https://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse)
 - [Ubuntu için kurulum](https://ubuntu.com/server/docs/service-openssh)
 - [Centos için kurulum](https://linuxhint.com/enable_ssh_centos8/)
 
-Daha sonra vagrant adında bir klasör oluşturup daha sonra içinde Vagrantfile adında bir dosya oluşturuyoruz.
-
-Vagrantfile dosyasına alttaki kodları kopyalıyoruz.
+Vagrant kurulumunu tamamladıysanız bir klasör oluşturup içine Vagrantfile adında bir dosya oluşturuyoruz ve alttaki kodları bu dosyaya kopyalıyoruz.
 
 ```Vagrantfile
 # -*- mode: ruby -*-
@@ -38,11 +81,6 @@ WORKER_IP_PREFIX  = "192.168.56.5"
 PROVIDER = "virtualbox"
 
 ENV['VAGRANT_DEFAULT_PROVIDER'] = PROVIDER
-# https://github.com/vagrant-libvirt/vagrant-libvirt
-#ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
-
-
-ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 
 $allscript = <<-ALLSCRIPT
   
@@ -56,20 +94,20 @@ echo $WORKER_COUNT
 echo $MASTER_IP_PREFIX
 echo $WORKER_IP_PREFIX
 
-echo "====================================================== root user aktif ediliyor ====================="
+echo "===================== root user aktif ediliyor ====================="
    
 sudo su
    
 echo -e "rkeadmin\nrkeadmin" | passwd root
 echo "export TERM=xterm" | tee -a /etc/bash.bashrc
    
-echo "====================================================== swap iptal ediliyor =========================="
+echo "===================== swap iptal ediliyor =========================="
    
 sed -i "/swap/d" /etc/fstab
 swapoff -a
 systemctl disable --now ufw
    
-echo "======================== kubernetes network için sysctl update ediliyor ============================="
+echo "=================== kubernetes network için sysctl update ediliyor =============="
    
 modprobe overlay
 modprobe br_netfilter
@@ -81,14 +119,14 @@ net.ipv4.ip_forward                 = 1
 EOF
 sysctl --system
    
-echo "====================================================== ssh ayarları yapılıyor======================"
+echo "============= ssh ayarları yapılıyor ============="
    
 sed -i "s/#PasswordAuthentication yes/PasswordAuthentication yes/" /etc/ssh/sshd_config
 echo "PermitRootLogin yes" | sudo tee -a /etc/ssh/sshd_config
    
 systemctl reload sshd
    
-echo "====================================================== host dosyaları düzenleniyor ==================="
+echo "===================== host dosyaları düzenleniyor ==================="
 for i in $(seq 1 $MASTER_COUNT); do
    echo "$MASTER_IP_PREFIX_VAR$i master$i" >>/etc/hosts
 done
@@ -98,7 +136,7 @@ for i in $(seq 1 $WORKER_COUNT); do
 done
    
 
-echo "====================================================== docker kuruluyor =================================="
+echo "===========docker kuruluyor ================"
    
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
    
@@ -171,14 +209,15 @@ end
 
 ```
 
-Vagrant klasörünün olduğu dizinde iken terminalde alttaki komutla makinalarımızı ayağa kaldırıyoruz.
+Klasörünün olduğu dizinde iken terminalde alttaki komutla makinelerimizi ayağa kaldırıyoruz.
 
 ```bash
 vagrant up
 ```
-İlk makinanın indirilmesi biraz uzun sürebilir. Hepsi çalışmaya başladığında host makinamızda oluşturacağımız ssh key'i tüm makinalara kopyalıyoruz amacımız şifresiz giriş yapabilmek.
 
-Linux ve Mac kullanıcıları  alttaki komutla kopyalama işlemini yapabilir.
+İlk makinanın indirilmesi biraz uzun sürebilir. Hepsi çalışmaya başladığında host makinemizde oluşturacağımız ssh key'i tüm Makinelere kopyalıyoruz amacımız şifresiz giriş yapabilmek.
+
+- Linux ve Mac kullanıcıları alttaki komutla kopyalama işlemini yapabilir.
 
 ```bash
 MASTER_COUNT=1
@@ -202,7 +241,7 @@ done
 
 ```
 
-Windows için cmd üzeinden alttaki komutu çalıştınız. Kullanıcı adını değiştirmeyi unutmayınız.
+- Windows için cmd üzerinden alttaki komutu çalıştınız. Kullanıcı adını değiştirmeyi unutmayınız.
 
 ```powershell
 # komutu çalıştırdığınızda key'in adını rkekey olarak giriniz ve password'ü boş geçiniz
@@ -212,33 +251,33 @@ ssh-keygen
 type C:\Users\kullanici_adiniz\.ssh\id_rsa.pub | ssh root@192.168.56.41 'cat >> .ssh/authorized_keys'
 type C:\Users\kullanici_adiniz\.ssh\id_rsa.pub | ssh root@192.168.56.51 'cat >> .ssh/authorized_keys'
 type C:\Users\kullanici_adiniz\.ssh\id_rsa.pub | ssh root@192.168.56.52 'cat >> .ssh/authorized_keys'
-}
-
 ```
 
-### RKE Kuruyoruz
-
-[Rancher'ın sayfasından](https://rancher.com/docs/rke/latest/en/installation/) local makinamıza binary yi indiriyoruz.
-
-Örnek konfigürasyon dosyaları için [resmi sayfaya](https://rancher.com/docs/rke/latest/en/example-yamls/) bakabilirsiniz.  
+Vagrant ile oratamımızı ayağa kaldırmış olduk artık RKE ile Kubernetes cluster'ımızı deploy edebiliriz.
 
 
-Host makinamızda rke adında bir klasör oluşturup rke binary'sini indiriyoruz. Linux ve Mac için alttaki komutları kullanabilirsiniz. Mac ve windows için [release sayfasından](https://github.com/rancher/rke/releases/tag/v1.3.6) işletim sisteminiz için doğru adresi alttaki komutta kullanınız. Windows için işlemler imanuel yapınız.
 
+### RKE ile Kubernetes Cluster Kurulumu
+
+
+Host makinemizde vagrantfile için oluşturduğumuz klasöre rke binary'sini indiriyoruz. Bunun için  [release sayfasından](https://github.com/rancher/rke/releases/tag/v1.3.6) işletim sisteminiz için uygun binary'yi indirebilirsiniz. 
+
+- **UYARI** Linux ve Mac kullanıcıları indirdiğiniz binary'yi executable yapmayı unutmayınız 
+
+Örnek konfigürasyon dosyaları için [şu sayafaya](https://rancher.com/docs/rke/latest/en/example-yamls/) bakabilirsiniz.  
+
+
+Alttaki komutla cluster.yaml dosyamızı oluşturuyoruz.
 
 
 ```bash
-
-wget  https://github.com/rancher/rke/releases/download/v1.3.6/rke_linux-amd64
-
-mv rke_linux-amd64 rke
-
-chmod +x rke
-
 # alttaki komut bize sorular sorarak örnek cluster.yaml dosyamızı oluşturacak.
-./rke config --name cluster.yml
+rke config --name cluster.yml
 ```
-sorular ve vediğimiz cevaplar
+Komutu çalıştırdığımızda sistem bize bazı sorular soracak.
+
+
+Sorular ve vermemiz gereken cevaplar şu şekilde
 
 ```
 [+] Cluster Level SSH Private Key Path [~/.ssh/id_rsa]: ~/.ssh/rkekey
@@ -294,10 +333,9 @@ sorular ve vediğimiz cevaplar
 [+] Add addon manifest URLs or YAML files [no]: 
 ```
 
-sonuçta bir cluster.yaml ve bir de admin config (kube_config_cluster.yml) dosyamız oluştu.
+Sonuçta bir cluster.yaml ve bir de admin config (kube_config_cluster.yml) dosyamız oluştu.
 
-
-artık cluster'ımızı ayağa kaldırabiliriz.
+Artık cluster'ımızı ayağa kaldırabiliriz.
 
 ```bash
 
@@ -305,22 +343,21 @@ rke up
 
 ```
 
-Testlerimizi yapalım.
-kube_config_cluster.yml dosyasını kubectl config dosyası olarak kullanacağız.
+Artık Longhorn'u kurmaya hazırız. Ancak Longhorn'un birden fazla diske çalışma özelliğini de test edebilmek için worker makinelerimize disk takmamız gerekiyor.
+
 
 
 ### Ekstra disk ekliyoruz
 
-Öncelikle makinalarımızı kapatıyoruz. Çünkü vagrant ile makinalarımızı Vagrant ile ayağa kaldırdığımız için ve halen çalışıyor durumda oldukları için VirtualBox disk eklememize izin vermeyecektir.
+Öncelikle makinelerimizi kapatıyoruz. Çünkü vagrant ile makinelerimiz Vagrant ile ayağa kaldırdığımız için ve halen çalışıyor durumda oldukları için VirtualBox disk eklememize izin vermeyecektir.
 
-vagrant klasöründeyken aşağıdaki komutu çalıştırıyoruz.
+Vagrant klasöründeyken aşağıdaki komutu çalıştırıyoruz.
 
 ```bash
 vagrant halt
 ```
 
-
-Virtualbox üzerindeki vm listesini alıyoruz
+VirtualBox üzerindeki vm listesini alıyoruz.
 
 ``` bash
  
@@ -341,7 +378,7 @@ VBoxManage createmedium disk --filename "./disk1.vdi" --size 10000 --format VDI 
 VBoxManage createmedium disk --filename "./disk2.vdi" --size 10000 --format VDI --variant Fixed
 ```
 
-daha sonra sata controller ekleyip disk attach ediyoruz.
+Daha sonra sata controller ekleyip disklerimizi attach ediyoruz.
 
 ```bash
 # sata controller ekle
@@ -355,13 +392,13 @@ vboxmanage storagectl vagrant-installation_worker2_1643664827019_17988 --name "S
 VBoxManage storageattach vagrant-installation_worker2_1643664827019_17988 --storagectl "SATA Controller" --device 0 --port 0 --type hdd --medium "./disk2.vdi"
 ```
 
-makinalarımı tekrar çalıştırabiliriz.
+Makinelerimizi tekrar çalıştırabiliriz.
 
 ```bash
 vagrant up
 ```
 
-makinalar açıldıktan sonra attach ettiğimiz diksleri mount edeceğiz. Mount etmeden önce format atmamız gerekiyor.
+Makineler açıldıktan sonra attach ettiğimiz diksleri mount edeceğiz. Mount etmeden önce format atmamız gerekiyor.
 
 
 worker1 için makinaya ssh ile bağlandıktan sonra alttaki komutları çlaıştırıyoruz
@@ -389,9 +426,7 @@ vim /etc/fstab
 
 # alttaki satırı ekliyoruz. Ancak eklerken VAGRANT-BEGIN diye başlayan satırı üstüne ekleyiniz
 
-
 UUID=e4daf767-18eb-4b94-a569-594a484b00ad  /mnt/data ext4  defaults  0  0
-
 
 # hata varsa çalışmayacaktır
 mount -a
@@ -402,35 +437,24 @@ df -h
 
 worker2 için de aynı komutları çalıştırıyoruz.
 
-daha sonra makinları restart ediyoruz.
+daha sonra makineleri restart ediyoruz.
 
 ```bash
-
 vagrant reload
-
 ```
-
-
-
 ### Longhorn Kuruyoruz
 
-
-![how-longhorn-works.svg](files/how-longhorn-works.svg)
-
-
-Kaynak: [Longhorn](https://longhorn.io/docs/1.2.3/concepts/)
+Bu yazıyı hazırlarken çıkan en son sürüm 1.2.3 versiyonuydu. Farklı kurulum yöntemleri var ancak biz bugün kubectl ile kurulum yapacağız. [Resmi  sayfasında](https://longhorn.io/docs/1.2.3/deploy/install/install-with-kubectl/)  kurulum dokümanına erişebilirsiniz.
 
 
-
-Kurulumu yaparken çıkan en son sürüm 1.2.3 versiyonuydu. Farklı kurulum yöntemleri var ancak biz bugün kubectl ile kurulum yapacağız. [Resmi  sayfasında](https://longhorn.io/docs/1.2.3/deploy/install/install-with-kubectl/)  kurulum dokümanıa erişebilirsiniz.
-
+Alttaki komutla kurulumu yapabilirsiniz. Tamamlanması 2-3 dk sürebilir.
 
 ```bash
 kubectl --kubeconfig kube_config_cluster.yml  apply -f https://raw.githubusercontent.com/longhorn/longhorn/v1.2.3/deploy/longhorn.yaml
 ```
 
+Kontrol etmek için alttaki komutu kullanabiliriz.
 
-kontrol edelim. 2-3 dk sürebilir tamamen kurulması.
 
 ```bash
 kubectl --kubeconfig kube_config_cluster.yml get pods --namespace longhorn-system
@@ -506,7 +530,8 @@ replicaset.apps/longhorn-driver-deployer-784546d78d   1         1         1     
 replicaset.apps/longhorn-ui-9fdb94f9                  1         1         1       10m
 
 ```
-Dikkate edilirse servislerin içinde "service/longhorn-frontend" adında bir servis var. Portforward yaparak bu servisi locahost'dan inceleyelim.
+
+Dikkat edilirse servislerin içinde "service/longhorn-frontend" adında bir servis var. Portforward yaparak bu servisi locahost'dan inceleyelim.
 
 ```
 kubectl --kubeconfig kube_config_cluster.yml --namespace longhorn-system port-forward service/longhorn-frontend 8080:80
@@ -516,57 +541,56 @@ kubectl --kubeconfig kube_config_cluster.yml --namespace longhorn-system port-fo
 host makinamızda http://localhost:8080 adresine gittiğimizde  longhorn arayüzünü görebiliriz. Şimdi servisi editleyip nortPort'a çevirelim.
 
 
-
 ```bash
 kubectl --kubeconfig kube_config_cluster.yml --namespace longhorn-system patch svc longhorn-frontend --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"},{"op":"replace","path":"/spec/ports/0/nodePort","value":31999}]'
 
 ```
-Artık kalıcı olarak bir port başlamış olduk servisimize. Ancak artık localhost üzerinden değil worker node'lardan herhangi biri üzerinden bağlanamız gerekiyor. Örneğin http://192.168.56.51:31999 adresini tarayacıda çalıştırdığımızda dashboard'u görebiliriz.
+Worker node'lardan herhangi biri üzerinden bağlanamız gerekiyor. Örneğin http://192.168.56.51:31999 adresini tarayacıda çalıştırdığımızda dashboard'u görebiliriz.
 
 ![dashboard.png](files/dashboard.png)
 
-#### Yeni Disk Eklemek
+### Longhorn'a Disk Ekliyoruz
 
 Dashboard üzerinde üstteki Node tabına tıklayıp aşağıdaki resimde de görülen her node'un sağnda yer alan hamburger menüye (Edit Node and Disks) tıklıyoruz. Daha sonra açılan popup üzerinde "add disk" butonuna tıklıyoruz.
 
 ![add_disk.png](files/add_disk.png)
 
-Makinalar üzerinde kalıcı olarak eklediğimiz diskin mount adresini ve ve diskin ne kadarının kullanılacağını yazıyoruz. Biz örneğimizde 5 Gb olarak allocate etmiş olduk. Longhorn bu ekelşdğimiz 2 Gb'lık alanı da havuza ekliyor. Toplam alandan da bize istediğimiz volume kadarını kullandırıyor. Yani volume oluştururken disk seçme gibi bir durumumz yok.
+Makineler üzerinde kalıcı olarak eklediğimiz diskin mount adresini ve ve diskin ne kadarının kullanılacağını yazıyoruz. Biz örneğimizde 5 Gb olarak allocate etmiş olduk. Longhorn bu eklediğimiz 2 GB'lık alanı da havuza ekliyor. Toplam alandan da bize istediğimiz volume kadarını kullandırıyor. Yani volume oluştururken disk seçme gibi bir durumumz yok.
 
-Yine istesek dashboard üzerinden volume de ekleyebiliriz. Bunun için üstteki menüden volmes tab'ına tıklıyoruz. Açılan sayfada sağ üztteki "Create Volume" butonuna tıklıyoruz.
+Yine istesek dashboard üzerinden volume de ekleyebiliriz. Bunun için üstteki menüden volumes tabına tıklıyoruz. Açılan sayfada sağ üstteki "Create Volume" butonuna tıklıyoruz.
 
 
-**UYARI**: worker node sayımız 2 olduğu için replica sayısını da 2 girmeyi unutmayınız. Eğer uyumsuz olursa ilerşde hata alabilirsiniz. Bu nedenle üstteki menüde yer alan settings tabına tıklyarak default replica sayısını 2 olarak ayarlamak mantıklı olacaktır.
+**UYARI**: worker node sayımız 2 olduğu için replica sayısını da 2 girmeyi unutmayınız. Eğer uyumsuz olursa ileride hata alabilirsiniz. Bu nedenle üstteki menüde yer alan settings tabına tıkalyarak default replica sayısını 2 olarak ayarlamak mantıklı olacaktır.
 
-ReadWriteOnce olarka ayaraladığımıza dikkaet edin. Yani buraa oluşturduğumuz volume tek bir node'a bağlanabilecek. ReadWriteMany örneğini ileride yapıyor olacağız.
+ReadWriteOnce olarak ayaraladığımıza dikkat edin. Yani burada oluşturduğumuz volume tek bir node'a bağlanabilecek. ReadWriteMany örneğini ileride yapıyor olacağız.
 
 
 ![new_volume.png](files/new_volume.png)
 
-- [Data Locality](https://longhorn.io/docs/1.2.3/references/settings/#default-data-locality) : Mümkün olduğunca pod'un bulunduğu node üzerinden replikaları tutmaya çalışır.
+- [Data Locality](https://longhorn.io/docs/1.2.3/references/settings/#default-data-locality) : Mümkün olduğunca pod'un bulunduğu node üzerinden replikaların tutlasını sağlamak için kullanılır.
 - [Auto-balance-replicas](https://longhorn.io/docs/1.2.3/references/settings/#replica-auto-balance):  Yeni node eklendiğinde replikaları tekrar düzenler ve yeni node'lara da dağıtılıp dağıtılmayacağını ayarlar.
 
 
-oluşturma işlemi bittikten sonra volme detaylarına gidecek olursak alttaki gibi bir ekran göreceğiz.
+Oluşturma işlemi bittikten sonra volume detaylarına gidecek olursak alttaki gibi bir ekran göreceğiz.
 
 ![volume_detail.png](files/volume_detail.png)
 
-Volume kullanıktan sonra gelip bu ekarana tekrar bakacağız. Şimdi bir [PersistentVolumeClaim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) oluşturalım.
+Volume'u bir pod'a bağlayıp kullanıktan sonra gelip bu ekarana tekrar bakacağız. Şimdi bir [PersistentVolumeClaim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims) oluşturalım.
 
-PVC'yi de öncelikle dashboard üzerinden yapalım bunun için oluşturduğumuz volume'un hemen sağındaki hamburger menüden "create pvc" linkine tıklıyoruz. namespace kısmına default deyip kaydedebiliriz. Aşağıdaki gibi pv/pvc sütuynu artık Bound olarka görünecek.
+PVC'yi de öncelikle dashboard üzerinden yapalım bunun için oluşturduğumuz volume'un hemen sağındaki hamburger menüden "create pvc" linkine tıklıyoruz. Namespace kısmına default deyip kaydedebiliriz. Aşağıdaki gibi pv/pvc sütunu artık Bound olarak görünecek.
 
 
 ![pvc.png](files/pvc.png)
 
 
 
-volume detaylarına bakacak olursak artık pvc adını atandığını görebiliriz.
+Volume detaylarına bakacak olursak artık pvc adının atandığını görebiliriz.
 
 ![pvc.png](files/pvc2.png)
 
 
 
-Şimdi bu eklediğimiz volume'u kullnacak bir uygulama ayağa kaldıralım.
+Şimdi bu eklediğimiz volume'u kullanacak bir uygulama ayağa kaldıralım.
 
 
 
@@ -590,7 +614,7 @@ spec:
 EOF
 ```
 
-daha sonra pod'un özelliklerini incelyeccek olursak volumedashboard pvc'nin kullanıldığını görebiliriz.
+Pod'un özelliklerini inceleyecek olursak volumedashboard pvc'nin kullanıldığını görebiliriz.
 
 
 ![pvc.png](files/pvc3.png)
@@ -601,7 +625,7 @@ Ayrıca dashboard'dan da bakacak olursak sağlıklı bir şekilde mypod adlı po
 ![pvc.png](files/pvc4.png)
 
 
-ikinci bir pod daha ekleyelim.
+İkinci bir pod daha ekleyelim.
 
 
 ```bash
@@ -651,7 +675,7 @@ Events:        <none>
 
 
 
-### Backup / Restore
+### Backup / Restore İşlemleri
 
 Öncelikle pod'lardan birinin /var/www/html dizinine gidip bir dosya oluşturalım
 
@@ -725,7 +749,7 @@ Daha sonra volume'ü yeni podlarımıza bğlamyabilmek için tekrar detach etmem
 ![volume_snaphot6.png](files/volume_snaphot6.png)
 
 
-artık ilk podumuzu tekrar ayağa kaldırabiliriz.
+Artık ilk podumuzu tekrar ayağa kaldırabiliriz.
 
 
 
@@ -749,7 +773,7 @@ spec:
 EOF
 ```
 
-dosyamızın geri gelip gelmediğini test edelim.
+Dosyamızın geri gelip gelmediğini test edelim.
 
 ```bash
 kubectl --kubeconfig kube_config_cluster.yml exec -it mypod -- bash
@@ -759,29 +783,22 @@ kubectl --kubeconfig kube_config_cluster.yml exec -it mypod -- bash
 ls /var/www/html/
 
 # sonuçta test.txt dosyaının geri geldiğini göebiliriz.
-
-
 ```
 
 
-Düzenli snapshot almak için volume özelliklerinden scheduled job tanımlayabilirsiniz.
+Düzenli snapshot/backup almak için volume özelliklerinden scheduled job tanımlayabilirsiniz.
 
 
 ![volume_snaphot7.png](files/volume_snaphot7.png)
 
-
-
-
 #### ReadWriteMany Volume Oluşturmak
-
-
 
 ![rwx-native-architecture.png](files/rwx-native-architecture.png)
 
 
-Şimdi aynı işlemleri kubectl ile yapalım. Ancakbu örneğimizde access mode'u **[ReadWriteMany](https://longhorn.io/docs/1.2.3/advanced-resources/rwx-workloads/)** olarak kullanalım.
+Şimdi aynı işlemleri kubectl ile yapalım. Ancak bu örneğimizde access mode'u **[ReadWriteMany](https://longhorn.io/docs/1.2.3/advanced-resources/rwx-workloads/)** olarak kullanalım.
 
-Ancak **[ReadWriteMany](https://longhorn.io/docs/1.2.3/advanced-resources/rwx-workloads/)** için worker node'larımıza nfs client kurmamız gerekiyor. Bunun için worker node'larımı ssh ile bağlanıp nfs-common paketini kuruyoruz.
+**[ReadWriteMany](https://longhorn.io/docs/1.2.3/advanced-resources/rwx-workloads/)** için worker node'larımıza nfs client kurmamız gerekiyor. Bunun için worker node'larımı ssh ile bağlanıp nfs-common paketini kuruyoruz.
 
 ```bash
 
@@ -855,7 +872,7 @@ longhorn-system   volumedashboard                            attached   healthy 
 
 
 
-şimdi bir deployment oluşturalım
+Şimdi bir deployment oluşturalım
 
 
 ```bash
@@ -936,11 +953,21 @@ kubectl --kubeconfig kube_config_cluster.yml exec -it nginx-deployment-cf4dc9684
 
 ls /var/www/html/
 
-# sonuçta test.txt dsyasını görebiliyor olmamız gerekiyor.
+# sonuçta test.txt dosyasını görebiliyor olmamız gerekiyor.
 
 ```
 
 
-Şimdilik bu kadar. daha fazla ne var derseniz resmi dokümanlarında detaylı oalrak anlatılmış olan [monitoring](https://longhorn.io/docs/1.2.3/monitoring/) başlığına göz atmanızı tavsiye ederim.
 
+Daha fazla ne var derseniz resmi dokümanlarında detaylı olarak anlatılan aşağıdaki başlıkları incelemenizi tavsiye ederim.
+- [Monitoring](https://longhorn.io/docs/1.2.3/monitoring/)
+- Backup için [target](https://longhorn.io/docs/1.2.3/snapshots-and-backups/backup-and-restore/set-backup-target/#nfs-backupstore) seçimi
+- [Mimari yapısı ve Konseptler](https://longhorn.io/docs/1.2.3/concepts/)
+- UI Dasboard için nginx ile basic [authentication](https://longhorn.io/docs/1.2.3/deploy/accessing-the-ui/longhorn-ingress/)
+- [Upgrade](https://longhorn.io/docs/1.2.3/deploy/upgrade/)
+- [Networking](https://longhorn.io/docs/1.2.3/references/networking/)
+
+
+
+Şimdilik bu kadar. Umarım faydalı olmuştur. Diğer yazılarımızda görüşmek üzere...
 
