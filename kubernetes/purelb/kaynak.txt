@@ -1,0 +1,5 @@
+ 
+https://purelb.gitlab.io/docs/
+
+
+https://medium.com/thermokline/comparing-k8s-load-balancers-2f5c76ea8f31

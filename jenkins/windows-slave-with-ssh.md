@@ -1,4 +1,4 @@
-# Jenkins Windows Agent'ı SSH ile Jenkins'e Bağlamak 
+# Jenkins'e SSH ile Windows Agent Bağlamak
 
 Merhaba arkadaşlar,
 
