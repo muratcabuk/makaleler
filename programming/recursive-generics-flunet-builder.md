@@ -4,12 +4,9 @@ Merhaba arkadaşlar
 
 Bu yazımızda amacımız recursive generic'leri kullanarak genişleyebilir ve tekrar kullanılabilir bir fluent builder yazmak.
 
-Anlaşılması için örneklerde oluşturulacak alt nesneleri basit tipler olarak tanımladım. Sadece isim atamak veya fiyat girmek için bu kadar karmaşık bir builder kodlamaya gerek yok. Ayrıca soyutlamaları da özellikle kullanmadım ki asıl konumuz olan recursive generic kavramına odaklanabilelim. 
+Anlaşılması için örneklerde oluşturulacak alt nesneleri basit tipler olarak tanımladım. Sadece isim atamak veya fiyat girmek için bu kadar karmaşık bir builder kodlamaya gerek yok tabii ki. Ancak konuya odaklanabilmek için detayları azaltmaya çalıştım ve soyutlamaları da çok zaruri olmadıkça bilerek kullanmadım.
 
-Burada bulduğumuz çözümler dışında daha birçok yöntemle bu aynı sonuca ulaşmak elbette mümkün. Bu nedenle tavsiyem burada yazılanlara alternatif üretmektense amaca odaklanmanız. Konuyu bıraktığımız yerden daha ileriye götürmeye çalışmak daha fazla öğrenmenizi sağlayacaktır. 
-
-Basit bir builder yazıp onu gittikçe geliştireceğiz. 
-
+Burada bulduğumuz çözümler dışında daha birçok yöntemle aynı sonuca ulaşmak elbette mümkün. Bu nedenle tavsiyem burada yazılanlara alternatif üretmektense amaca odaklanmanız. Konuyu bıraktığımız yerden daha ileriye götürmeye çalışmak daha fazla öğrenmenizi sağlayacaktır. 
 
 Bildiğiniz üzere creational (yaratımsal) tasarım desenlerinden biri de builder tasarı desenidir. Karmaşık nesnelerin adım adım oluşturulmasını sağlayarak daha anlaşılabilir ve yönetilebilir bir yapı sunar. Bazen bir nesneyi oluştururken bir çok alt nesneyi e oluşturmak ve yönetmek durumunda da kalabiliriz. Bu gibi durumlarda da builder tasarım deseni süreci parçalara bölerek karmaşıklığı azaltır.
 
@@ -23,6 +20,7 @@ Zaten yazılım geliştirirken SOLID prensiplerine aykırı en ufak bir hata ile
 Teori kısmına biraz değindiğimize göre çalışmaya başlayabiliriz.
 
 En basit haliyle aşağıdaki gibi bir kodlama ile Product nesnesini adım adım oluşturabiliriz.
+
 ```c#
 
     public class Product
@@ -103,7 +101,7 @@ var product = new ProductBuilder()
 ```
 
 
-Örneğimizi biaz geliştirelim ve ve oluşturulacak alt nesnenler için ayru builder objeleri oluşturalım. Ayrıca adımların belli bir sıra tamamlanmasını sağlayalım.
+Örneğimizi biaz geliştirelim ve ve oluşturulacak alt nesnenler için ayrı builder objeleri oluşturalım. Ayrıca adımların belli bir sıra tamamlanmasını sağlayalım.
 
 ```c#
     public class Product
@@ -194,10 +192,10 @@ var product = new ProductBuilder()
 
 Görüleceği üzere artık her alt nesnenin oluşturulmasını farklı bir builder ile yapmış olduk. Ayrıca her bir adım bir sonraki adımı da bize veriyor. Örneğin ProductNameBuilder sınıfındaki SetName fonksiyonu bize ProductPriceBuilder nesnesini döndürdüğü için bir sonraki adımı takip etmek zorunda bırakıyor böylece hata yapma riski ortadan kaldırmış olduk.
 
-Ancak bu seferde her adım için instance'ları kendimiz oluşturduk ki buda çok tavsiye dilen bir durum değil. Yani creational pattern'lerin faydalarından yararlanmak için için builder pattern'i uygulamya çalışırken arada onlarca instance'ı doğrudan oluşturmak çok da mantıklı olmadı.
+Ancak bu seferde her adım için instance'ları kendimiz oluşturduk ki buda iyi bir kullanım değil. Yani creational pattern'lerin faydalarından yararlanmak için builder pattern'i uygulamaya çalışırken arada onlarca instance'ı doğrudan oluşturmak çok da mantıklı olmadı.
 
 
-O zaman örneğimizi biraz daha geliştirelim. Bu sefer örneğimizi recursive generic kullarnarak yapalım.
+O zaman örneğimizi biraz daha geliştirelim. Bu sefer örneğimizi recursive generic kullanarak yapalım.
 
 
 ```c#
@@ -287,9 +285,9 @@ O zaman örneğimizi biraz daha geliştirelim. Bu sefer örneğimizi recursive g
 
 ```
 
-Bu şelilde soyutlamalardan daha fazla faydalanmış olduk böylece conrete nesnlere bağımlılığımız biraz daha zalmış oldı.
+Bu şekilde soyutlamalardan daha fazla faydalanmış olduk böylece concrete nesnelere bağımlılığımız biraz daha azalmış oldu.
 
-Product sınıfımıza bakacak olursak New adında bir fonksiyon Builder nesnemizi oluşturuyor. Dikkat edilirse yeni bir Product sınıfı yazıldığı görülüyor. Oluşturulan builder nesnesi de Product2 nesnesini inşa eden builder'ların en souncusu yani  ProductCountBuilder sınıfı. Bunun nedeni ise bu sınıfın kendinden önceki bütün kalıtımı içeriyor olması. Böylece bütün builder'rın sunmuş olduğu fonksiyonlara erişebiliyoruz. Eğer yanlış yerden başlayacak olursak hata almıyoruz ancak oluşan Product2 nesnemizde set edilmeyen property'ler boş gelmiş oluyor. Örneğin SetName yerine SetPrice'dan başlayıp SetCount yaptıktan sonra nesnemize ulaşacak olursak Name property'si  empty olarak dönecektir.
+Product sınıfımıza bakacak olursak New adında bir fonksiyon Builder nesnemizi oluşturuyor. Dikkat edilirse yeni bir Product sınıfı yazıldığı görülüyor. Oluşturulan builder nesnesi de Product2 nesnesini inşa eden builder'ların en sonuncusu yani  ProductCountBuilder sınıfı. Bunun nedeni ise bu sınıfın kendinden önceki bütün kalıtımı içeriyor olması. Böylece bütün builder'rın sunmuş olduğu fonksiyonlara erişebiliyoruz. Eğer yanlış yerden başlayacak olursak hata almıyoruz ancak oluşan Product2 nesnemizde set edilmeyen property'ler boş gelmiş oluyor. Örneğin SetName yerine SetPrice'dan başlayıp SetCount yaptıktan sonra nesnemize ulaşacak olursak Name property'si  empty olarak dönecektir.
 
 
 ```c#
@@ -348,10 +346,36 @@ var product3 = Product2.New
 
 Ancak bu sistemde hala bir eksiklik var. Örneğin bu yapıyı kullanarak bir bilgisayar objesini inşa edemiyoruz. Ayrıca son adım olan ProductCountBuilder nesnesinden sonra yeni bir builder ekleecek olsak Product nenemizi de değiştirmek durumda kalacağız. Çünkü son adım değişeceği için Builder sınıfımızı yeni adımdan miras almalıyız.
 
-Eğer bu iki negatif durumuda halledebilirsek biraz daha esnek bir yapımız olmuş olacak.
+Eğer bu iki negatif durumu da halledebilirsek biraz daha esnek bir yapımız olmuş olacak. 
 
-Yeni bir Product sınıfı yazdık (Product3). Ancak bu sefer bir interface kullanarak yaptık çünkü oluştuccağımız diğer nesneleri soyutlamamız gerekiyor. Öncelikle Product3 sınıfı için bir builder yapısı kuruyoruz. Ardından bu sınıftan türeyecek Computer nesnesi için bir builde geliştiriyoruz. Product3 için geliştirdiğimiz builder yapısınıa yeni builder sınıfları ekliyoruz. Son Computer nesnesinde Car nesnesini miras alarak Car için gerekli builder sınıflarını Computer yazdıklarımıza ekliyoruz. Bu arada Car nesnesini Computer'dan değil Product3'den de türetebilir ve yine Product3 için yazılmış builer'ları genişleterek Computer'dan bağımsız farklı bir builder kurgududa geliştrebilirdik.
+O zman örneğimizi geliştirmeye devam edelim.
 
+
+Yeni bir Product sınıfı yazdık (Product3). Ancak bu sefer bir interface kullanarak yaptık çünkü oluşturacağımız diğer nesneleri soyutlamamız gerekiyor. Öncelikle Product3 sınıfı için bir builder yapısı kuruyoruz. Ardından bu sınıftan türeyecek Computer nesnesi için bir builder geliştiriyoruz. Product3 için geliştirdiğimiz builder yapısına yeni builder sınıfları ekliyoruz. Son olarak Computer nesnesinden Car nesnesini miras alarak Car için gerekli builder sınıflarını Computer için yazdıklarımıza ek olarak yazdıklarımıza ekliyoruz. 
+
+```
+Product3
+    |
+    |___ Computer
+            |
+            |____ Car
+```
+
+
+
+
+Bu arada Car nesnesini Computer'dan değil Product3'den de türetebilir ve yine Product3 için yazılmış builer'ları genişleterek Computer'dan bağımsız farklı bir builder kurgu da geliştirebilirdik.
+
+```
+Product3
+    |
+    |___ Computer
+    |
+    |____ Car
+```
+
+
+Bu örnekte bütün nesnelerin kullanacağı bir interface oluşturmak zorundayız. Çünkü artık birden fazla nesneyi oluşturmak istiyoruz.
 
 
 ```c#
@@ -400,7 +424,8 @@ public class ProductNameBuilder3<T>  where T : ProductNameBuilder3<T>
 }
 
 
-public class ProductPriceBuilder3<T> : ProductNameBuilder3<ProductPriceBuilder3<T>> where T : ProductPriceBuilder3<T>
+public class ProductPriceBuilder3<T> : ProductNameBuilder3<ProductPriceBuilder3<T>> 
+                                       where T : ProductPriceBuilder3<T>
 {
 
     private IProduct3 _product3;
@@ -421,7 +446,8 @@ public class ProductPriceBuilder3<T> : ProductNameBuilder3<ProductPriceBuilder3<
 }
 
 
-public class ProductCountBuilder3<T> : ProductPriceBuilder3<ProductCountBuilder3<T>> where T : ProductCountBuilder3<T>
+public class ProductCountBuilder3<T> : ProductPriceBuilder3<ProductCountBuilder3<T>> 
+                                       where T : ProductCountBuilder3<T>
 {
 
 
@@ -440,7 +466,8 @@ public class ProductCountBuilder3<T> : ProductPriceBuilder3<ProductCountBuilder3
 }
 
 
-public class GenericProductBuilder<T> : ProductCountBuilder3<GenericProductBuilder<T>> where T : GenericProductBuilder<T>
+public class GenericProductBuilder<T> : ProductCountBuilder3<GenericProductBuilder<T>> 
+                                        where T : GenericProductBuilder<T>
 {
     private static readonly IProduct3 _product3=new Product3();
     public GenericProductBuilder():base(_product3)
@@ -448,11 +475,6 @@ public class GenericProductBuilder<T> : ProductCountBuilder3<GenericProductBuild
     }
     public IProduct3 Build() => _product3;
 }
-
-
-
-
-
 
 //----------------------------------------- Computer nesnemiz için Product Builder nesnesini geliştiriyoruz.
 public class Computer : Product3
@@ -474,7 +496,8 @@ public class Computer : Product3
 
 
 
-public class ComputerManufacturerBuilder<T> : ProductCountBuilder3<ComputerManufacturerBuilder<T>> where T : ComputerManufacturerBuilder<T>
+public class ComputerManufacturerBuilder<T> : ProductCountBuilder3<ComputerManufacturerBuilder<T>> 
+                                              where T : ComputerManufacturerBuilder<T>
 {
 
 
@@ -495,7 +518,8 @@ public class ComputerManufacturerBuilder<T> : ProductCountBuilder3<ComputerManuf
 
 
 
-public class GenericComputerBuilder<T> : ComputerManufacturerBuilder<GenericComputerBuilder<T>> where T : GenericComputerBuilder<T>
+public class GenericComputerBuilder<T> : ComputerManufacturerBuilder<GenericComputerBuilder<T>> 
+                                        where T : GenericComputerBuilder<T>
 {
     private static readonly IProduct3 _computer=new Computer();
     public GenericComputerBuilder():base(_computer)
@@ -505,7 +529,7 @@ public class GenericComputerBuilder<T> : ComputerManufacturerBuilder<GenericComp
 }
 
 
-//-------------------------------------------------------------------------------------- car nesnemiz için Computer Builder nesnesini geliştiriyoruz.
+//----------------- car nesnemiz için Computer Builder nesnesini geliştiriyoruz.
 
 
 public class Car : Computer
@@ -527,7 +551,8 @@ public class Car : Computer
 
 
 
-public class CarModelBuilder<T> : ComputerManufacturerBuilder<CarModelBuilder<T>> where T : CarModelBuilder<T>
+public class CarModelBuilder<T> : ComputerManufacturerBuilder<CarModelBuilder<T>> 
+                                  where T : CarModelBuilder<T>
 {
     private readonly Car _car;
 
@@ -545,7 +570,8 @@ public class CarModelBuilder<T> : ComputerManufacturerBuilder<CarModelBuilder<T>
 }
 
 
-public class GenericCarBuilder<T> : CarModelBuilder<GenericCarBuilder<T>> where T : GenericCarBuilder<T>
+public class GenericCarBuilder<T> : CarModelBuilder<GenericCarBuilder<T>> 
+                                    where T : GenericCarBuilder<T>
 {
     private static readonly Car _car=new Car();
     public GenericCarBuilder():base(_car)
@@ -596,11 +622,16 @@ public class GenericCarBuilder<T> : CarModelBuilder<GenericCarBuilder<T>> where 
 
 ```
 
-Son tahlilde istediğimiz nokta ya gelebildik. Tabiiki bu kadar basit sınıflar ve primitive tipler için böyle bir yapı kurmak çokda mantıklı değil. Ayrıca bunu yazmanında daha basit farklı yolları da bulunabilirdi. Baştada dediğim gibi amacımız mevzuyu yavaş yavaş recursive generic'lere getirme ve neler yapılabilceğine basit bir örnek vermekti.
+Product, Computer ve Car objelerimizi oluşturabildik. İlk oluşturduğumuz product builder yapısını her yeni nesnede biraz daha geliştirerek kullandık. 
+Son tahlilde istediğimiz nokta ya gelebildik. Tabii ki bu kadar basit sınıflar ve primitive tipler için böyle bir yapı kurmak mantıklı değil. Ayrıca bunu yazmanın da daha basit farklı yolları da bulunabilirdi. Başta da dediğim gibi amacımız mevzuyu yavaş yavaş recursive generic'lere getirmek ve neler yapılabileceğine basit bir örnek vermekti. 
+
+Bundan sonra ne yapılabilir.
+
+- Örneğimizde sıradan bir adımı çıkartmak mümkün değil. Mesela diyelimki Car nesnesi için Manufacturer property'sine ihtiyaç olmasın. Bu adımı yine de yazmak durumundayız bu sistemde. Bu durum için çözüm üretilebilir.
+- Bu sistemde biz interface kullanmadan conrete objeler kullanarak kodumuz yazdık. Bunun yerine abstract bağımlılığımızı arttırabilmek için interface implementasyonu yapılmalıdır.
+- alt nesneler için oluşturduğumuz builder nesneleri de kendi içinde daha karmaşık nesneleri build edecek şekilde farklı örnekler yapılabilir. 
 
 Umarım faydalı olmuştur.
-
-
 
 # Kaynaklar
 - https://www.evrenbal.com/builder-tasarim-deseni-nedir
