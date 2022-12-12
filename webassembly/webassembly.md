@@ -1,11 +1,24 @@
-# WebAssembly Tarafında Neler Oluyor?
+# WebAssembly Hakkında Her Şey
 
-Bu yazımızda son yıllarda kendinden sıkça söz ettiren WebAssembly dünyasındaki gelişmelere göz atacağız. Nasıl çalıştığını anlamaya çalışacağız. Bununla birlikte hangi alanlarda kullanıldığı ve bize neler vadettiğini inceleyeceğiz. İyi okumalar diliyorum.  
+Bu yazımızda son yıllarda kendinden sıkça söz ettiren WebAssembly hakkında konuşacağız. 
 
+Alttaki başlıkları inceliyor olacağız.
+
+- WebAssembly nedir? Ne için kullanılır, amacı nedir?
+- Hali hazırda kullanıldığı yerler nelerdir?
+- Kullanılabileceği alanlar ve yol haritası nedir?
+- Nasıl çalışır?
+- Güvenli midir?
+- JavaScript'i bitirecek mi? Web'in geleceği mi?
+- Mobil uygulama geliştirmeyi etkiler mi? 
+- Merkeziyetsiz yapılar, blockchain ve web 3 için neler sunuyor? 
+
+
+
+Yani özetle WebAssembly hakkında bir çoğumuzun aklında olan sorulara cevap bulamaya çalışacağız. Öncelikle WebAssembly nedir ne değildir oradan başlayalım.
 
 Bu kadar hızlı gelişmesinde teknoloji ve yazılım dünyasının en büyük firmalarının  (Mozilla, Microsoft, Google, Apple, Fastly, Intel, ve Red Hat'ın) bu teknolojiye verdikleri desteğin payı çok büyük. Ancak tek başına bu yeteli değil tabii ki. Geçen beş yıla baktığımızda farkında olmasak da belki en hızlı gelişen teknolojilerden biri WebAssembly diyebiliriz. Dikkatimizi çekmemesinin temel sebebi ise  halen bir önceki yapıların/teknolojilerin kullanılabiliyor olmasından dolayı ihtiyaç haline gelmemiş olması.
 
-Öncelikle daha önce hiç duymayanlar için WebAssembly nedir ne değildir oradan başlayalım.
 
 [Resmi sayfasındaki](https://webassembly.org/) tanıma bakacak olursak şu şekilde tanımlanmış.
 
@@ -16,7 +29,7 @@ _"WebAssembly (Wasm) stack-based virtual machine için tasarlanmış binary  bir
 [kaynak](https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/)
 
 
-Yani hemen hemen bütün programlama dilleriyle kod yazabileceğiz ve ortaya çıkan ürünü (wasm) çalıştırmak istediğimiz platform için bir runtime varsa çalıştırabileceğiz. Java'da bildiğiniz üzere bir çok platformda çalışabiliyor.Ancak **WebAssembly Java'dan farklı olarak platform ile programlama dilini soyutluyor**. Bu sayede istediğimiz programlama diliyle geliştirme yapabiliyoruz.
+Yani hemen hemen bütün programlama dilleriyle (şuan kırka yakın dil ile) kod yazabileceğiz ve ortaya çıkan ürünü (WASM) çalıştırmak istediğimiz platform için bir runtime varsa çalıştırabileceğiz. Java'da bildiğiniz üzere bir çok platformda çalışabiliyor.Ancak **WebAssembly Java'dan farklı olarak platform ile programlama dilini soyutluyor**. Bu sayede istediğimiz programlama diliyle geliştirme yapabiliyoruz.
 
 Aklımıza zaten biz bir kodu farklı platformlarda çalıştırabiliyorduk şeklinde bir düşünce gelebilir. Örneğin C dili ile yazılmış bir kodu farklı platformlar için derleyebiliyoruz.
 ![c2.png](files/c2.png)
@@ -212,9 +225,9 @@ Ayrıca browser dışında çalışabilme yeteneği ile mobil ve iot cihazların
 
 WASM yazmak  için text format mevcut ve bunu wasm'a çevirmekte mümkün. Alttaki komutlarla bu yapılabilir. Ancak tabii ki bu şekilde geliştirme yapmak çok zor olacağı için her programlama dili için farklı farklı implementasyonlar mevcut.
 
-![wa1.png](files/wa1.png)
+![wasm.png](files/wasm.png)
 
-Text formatını uzantısı  wat, binary formatın uzantısı WASM olarak kullanılır. Text formattan binary almak için alttaki komutu kullanabilirsiniz. Detaylar için [şu sayfayı](https://webassembly.org/getting-started/advanced-tools/) ziyaret edebilirsiniz.
+Text formatını uzantısı  wat, binary formatın uzantısı wasm olarak kullanılır. Text formattan binary almak için alttaki komutu kullanabilirsiniz. Detaylar için [şu sayfayı](https://webassembly.org/getting-started/advanced-tools/) ziyaret edebilirsiniz.
 
 ```shell
 wat2wasm simple.wat -o simple.wasm
@@ -566,25 +579,81 @@ EKS, GKE, AKS, DigitalOgean, onprem ve diğer platformlar için  kurulum doküma
 - [Minikube ile kurulum](https://docs.krustlet.dev/howto/krustlet-on-minikube/)
 - [MicroK8s ile kurulum](https://docs.krustlet.dev/howto/krustlet-on-microk8s/)
 
+## Blockchain, Web3 ve Diğer Diğer Teknolojiler
+
 WebAssembly ile ilgili diğer bir proje deFermyon firmasının geliştirmiş olduğu microservice framework'ü. Framework (spin) hakkında detaylı bilgi almak için [quickstart sayfasını](https://developer.fermyon.com/spin/quickstart/) ziyaret edebilirsiniz.
 
-## Blockchain ve Web 3 Dünyasında WebAssembly
+
+Blockchain'e geçmeden önce mobil dünya için WebAssembly ne ifade ediyor onun hakkında da konuşalım biraz. IPhone ilk çıktığı yıllada Steve Jobs'ın app store yerine SPA/PWA gibi yapılarla yani HTML, CSS ve JavaScript ile geliştirme yapılması taraftarı olduğunu duymuşsunuzdur. Duymadıysanızda [Google'da](https://www.google.com/search?q=steve+jobs+hates+app+store) yapacağınız ufak bir arama ile bulabilirsiniz. [Forbes](https://www.forbes.com/sites/markrogowsky/2014/07/11/app-store-at-6-how-steve-jobs-biggest-blunder-became-one-of-apples-greatest-strengths/?sh=194313694652) dergisi konuyu bşr başlığında tartışmış. Ancak buradaki bakış açısı Steve Jobes'ın hatalı düşündüğü yönünde çünkü app store sayesinden Apple çok para kazandı. Ancak Mevzuya teknolojik gelişim yönünden bakacak olursak Steve Jobs'ın ne kadar doğru düşündüğünü anlayabiliyoruz. Belki o da fikrini ileride değiştirmişti onu bilmiyorum. Bugün web ve mobil düyansına bakacak olursak Apple ve Google app store'lara sıkışmış durumdayız. Standartları ve limitleri belirleyen koca dünyaqda sadece iki firma. En Basit haliyle bir push notificaiton göndermek istediğimizde bunu marketlerden bağımsız yapamıyoruz. Halbuki bu ekosistem SPA/WPA veya alternatif birşey geliştirilerek store bağımsız da yapılabilirdi. Şimdi bu fikre kaşı olanların "ama ama" diyecekelrini tahmin ediyorum. Ancak teknoloji bu tarafdan ilerleseydi yerşeye çare bulunabilirdi. Güvenilir onlarca, yüzlerce market kurulabilirdi. Browser'ları yetenekleri bu yönde geliştirlebilirdi. Ancak para tatlı geldi ve haklıda çıktılar. Son 10 yıla bakacak olursak zaten sadece store'lar dan kazanılan parlar milyar dolarları buluyor. 
+
+Ancak bütün bunlara rağmen ekosistem kendi yolunu çizmeye çalışıyor. Yaşanan bir çok olay, kişisel veri hakkında insanlarıvn ve ülkelerin bilinçlenmesi vb nedenlerden dolayı merkeziyetsiz yapılar hızla gelişiyor. Sadece Elon Musk'ın Twitter'ı satın almasında sonra gelişen olaylarla merkeziyetsiz sosyal medya plaformlarının kullanım oranları ciddi şekilde arttı. Bazı örnekleri aşağıdaki listede bulabilirsiniz.
+![decentralization.png](files/decentralization.png)
+
+- [Mastadon](https://joinmastodon.org/servers): Her kullanıcının isterse hazli hazırdaki sunculardan birinde hesap açabliceği ya da kendi sunucusunu kurup diğer suncularla ilertişime geçebilceği bir yapı. Düşünün mesela sadece sanat üzerine Twitter kurabilirsiniz. Yada sadece okul arkadaşlarınız için bir Twitter açabildiğinizi düşünün. Bütün bilgi sizde, herkes özgürce konuşabiliyor kimse ban yemiyor. İsterseni bunu  [diğer sunucularla](https://joinmastodon.org/servers) etkileşime sokabilirsiniz ya da kendi başınıza göre takılabilirsiniz.
+- [Pixelfed](https://pixelfed.org/): Instagram için bir alternatif.
+- [Lemmy](https://join-lemmy.org/): Reddit alternatifi.
+- [Diaspora](https://diasporafoundation.org/): Facebook alternatifi.
+- [PeerTube](https://joinpeertube.org/):  YouTube alternatifi.
+
+[Liste Kaynağı](https://teknolojirehberleri.xyz/rehber/dagitik-teknolojiler-nedir)
+
+Ayrıca bütün bu uygulamaları sadece kendi içinde değil örneğin sadece Mastadon kendi içinde değil diğerleri arasında da bilgi paylaşabilir. Yani Mastadon hesabınızı Fixefed üzerinden de paylaşabilir veya takip edebilirsiniz.
+
+Bunu sağlayanda W3C tarafından standartları belirlenmiş olan [ActivityPub](https://www.w3.org/TR/activitypub/) protokolüdür. ActivityPub protokolü, ActivityStreams 2.0 veri formatına dayalı merkezi olmayan bir sosyal ağ protokolüdür. İçerik oluşturmak, güncellemek ve silmek için bir istemciden sunucuya API'nin yanı sıra bildirimler ve içerik iletmek için birleşik bir sunucudan sunucuya API sağlar. 
+
+Tabiiki mevzu sadece sosyal medya ile sınırlı değil. Tabiri caizse tüm web ekosistemi web3 ile birlikte kendi kabuğunu kırmaya, bağımsız olmaya çalışıyor. Tabi burada web3 geldi iddiasında bulunmuyoruz. Daha uzun bir yolu olduğu gerçek ancak oraya giden yolda ekosistem bir değişim yaşıyor. Bu yolda bir çok teknoloji çıkacak bazıları yok olacak bazıları hayatta kalacak.
+
+Evet bu girişten sonra WebAssembly bu dünyaya neler sunabilir onu inceleyelim.
+
+### Mobil Dünya
+
+Daha önce bahsettiğimiz [Blazor Framwork](https://dotnet.microsoft.com/en-us/apps/aspnet/web-apps/blazor)'ü ve [Uno Platform](https://platform.uno/) WebAssembly ile nasıl cross platform uygulama geliştirilebileceğini gösteren çok iyi iki örnek. Bunlara benzer WebAssembly daha bir çok framework ve uygulama bulabilirsiniz.
+
+Ancak asıl önemli olan WebAsembly'nin yeterli desteği görmesi şartıyla app store kültürünü değiştirebilcek potansiyelinin olması. Yazılan kodun her platformda çalışması ve WASI ve runtime'lar yardımıyla güvenlik ve sistem kaynalarını kullanabilme yeteneği cihazlarda uygun yapıların sağlanması ile daha zengin uygulamların ve oyunların yazılmasını sağlayabilir. Üstelik bunu bütün programlama dilleriyle yapmak mümkün olabilir. 
+
+- Rust ile geliştirilmiş mobil bir oyun, [Panda Doodle](https://lucamoller.com/posts/2021-07/rewritting-my-mobile-game-in-rust-targeting-wasm): WebAssebly olduğu için tabii ki browserdan da oyananbiliyor. [Şu linkten](https://lucamoller.com/posts/2021-07/rewritting-my-mobile-game-in-rust-targeting-wasm) oyunu oynyabilirsiniz.
+- Paltform Uno'da WebAssembly ile geliştirilmiş mobil destrekli bir başka oyun. Kaynak kodları ile birlikte [şu linkten](https://platform.uno/blog/a-space-shooter-game-on-the-web-with-c-wasm-and-uno-platform/) inceleyebilirsiniz.
+- Unity kullanılarrak WebGL ve WebAssembly ile geliştirilmiş [AngryBots](https://beta.unity3d.com/jonas/AngryBots/) oyunu.
+
+Zaten cross platform uygulama geliştirilebildiğinden bahsetmiştik bu örnek oyunlar da aslında bu dünyada da  birşey yapılabilceğinin kanıtı diyebiliriz.
+ 
+
+### Blockchain Dünyası
+
+Blockchain tarafında WebAssembly ile ilişkili en ilginç uygulamalardan biri Monero adlı kripto parayı oluşturmak için kullanılan Coinhive adlı browser eklentisidir. Dikkatsiz kullanıcılardan onay alıp kullanıcı bilgisayarında WebAssembly'yi kullanarak kripto para oluşturan bu eklenti 2019 yılında kapatılmış ancak halen [farklı versiyonları](https://www.google.com/search?q=Cryptojacking) farklı kripto paralar için var. Tabi bunlar kötü amaçla geliştirilmiş uygulamalar ancak mevzunun nereye gidebeleceği konusunda bir fikir veriyor. 
+
+Bir uygulamayı client tarafına yükleyerek sunucu yükünü azaltmak tek fayda olmayabilir. Yani yazacağımız uygumayı dağınık mimaride çalışacak şekilde tasarlayabilmek, client'lar dan veri toplamak (IOT), çok büyük hesaplamalrın bir kısmını dağıtarak yapmak (distributed computing), merkeziyetsiz (decentralized) uygulamalar geliştirmek vb sistemleri kurmak da mümkün. Şimdiden WebRTC protokolü ile çalışan peer-to-peer uygulamalar geliştirmek için yazılmış [wasp-peer](https://github.com/wasm-peers/wasm-peers) adında bir kütüphane yapmışlar bile.
+
+Blockchain çok bildiğim bir dünya değil aslında ancak yukarıda bahsettiğim yapıları düşündüşümde ilk aklıma gelen blockchain dünyası oldu. Çünkü sanki tam orası için yazılmış gibi duruyor WebAssembly.
 
 
-- blockchain
-https://medium.com/@rauljordan/webassembly-the-future-of-blockchain-computing-1a0ae28f7e40
-
-- blockchain uygulaması
-https://www.codementor.io/@beber89/webassembly-to-run-blockchain-using-go-yuw6f9u7m
-
-- web 3
-https://101blockchains.com/web-3-0-blockchain-technology-stack/
+Aşağıdaki resimde görülen Ethereum Virtual Machine benzeri yapı bütün blockchain sistemlerde var. Geliştiriceilerin dApp (decentralized application) geliştirmek için kod yazdıkları yerde tam olarak burası.
 
 
+![vm.png](files/vm.png)
+[kaynak](https://www.preethikasireddy.com/post/the-architecture-of-a-web-3-0-application)
 
 
+- [Şu örnek uygulama](https://www.codementor.io/@beber89/webassembly-to-run-blockchain-using-go-yuw6f9u7m) ile blockchain kullanılarak iki kişi arasında coin alışverişi yapılmış.
+
+- Ethereum'un core developer'larından Raul Jordan'ın  "[WebAssembly & The Future of Blockchain Computing](https://medium.com/@rauljordan/webassembly-the-future-of-blockchain-computing-1a0ae28f7e40)" yazısını okumanızı tavsiye ederim. Burada EVM (Ethereum Virtual Machine) WebAssembly ile tekrar yazılmasından bahsetmiş. 
+
+Bildiğiniz üzere dApp  geliştirmek için en çok tercih edilen yapılardan birisi Ethereum. EVM ise ethereumun temel bileşenlerinden birisi. EVM nedir sorusunu  doğrudan koinsaati.com adresinden alıntı yaparak ekliyorum.
+
+>Akıllı sözleşmeler, merkeziyetsiz uygulamaların (DApp’ler) kullanımı da dahil olmak üzere birçok amaç için kullanılır. Akıllı sözleşmeler, Ethereum blok zincirinde çalışan algoritmalardır. Sözleşme, bir Ethereum adresinde depolanan bir veri ve kod koleksiyonudur. Akıllı sözleşmeler önceden belirlenmiş kuralları uygulamak için kullanılırlar. Ethereum ağında (EVM) akıllı bir sözleşme oluşturmak için Ethereum Virtual Machine ifadesinin kullanılması gerekiyor. Virtual Machine temelde, yürüten kod ile yürüten makine arasında bir soyutlama katmanı oluşturur. Bu katman, uygulamaların birbirinden ve ana bilgisayarlarından ayrılmalarını gerçekleştirmek için gereklidir.
+
+"Yürütülen kod ile yürüten makine arasında bir soyutlama oluşturur" cümlesi çok manidar :) Sanki WebAssembly burası için yazılmış gibi duruyor. 
+
+- dApp geliştime konusunda Ethereum alternatiflerinden birisi [Polkadot](https://polkadot.network/cross-chain-communication/?utm_source=mads&utm_medium=search&utm_campaign=xcm%202022&utm_content=brand): Daha çok blockchain'ler arası iletişim ile ilgilenir. [Substrate](https://substrate.io/) adında bir fremwork'ü vardır, bunu kullanarak uygulam ageliştirilebiliyor. Burada geliştirilen uygulamar da WebAssembly olarak derlenerek çalıştırılır. Ancak şuansadece Rust dilini destekleyen bir framework'leri var.
+
+- Diğer bir dApp geliştirme blockchain platformu [Cosmos](https://cosmos.network/): Polkadot gibi bu da çoğunlukla blockchain'ler arası ilerişim ile ilgileniyor. Hatta mottosu "The Internet of Blockchains". Aynen diğerlerinde olduğu gibi burada development ekosistemi WebAssembly üzerine kurulmuş [CosmoWasm](https://docs.cosmwasm.com/docs/1.0/) smart contrsact geliştirmek için bir altapıları var ancak bu da şimdilik sadece Rust'ı destekliyor.
 
 
+Daha başka sistemlerde var eltte ancak en çok bilinene blockchain uygula geliştirme sistemlerinde WebAssembly'nin sanıl kullanıldığını bimiş olmaz herhalde geleceği hakkındaq bize yeteri kadar fikir vermiştir. 
+
+Evet benden bu kadar. Umarım faydalı olmuştur.
+
+Diğer yazılarımızda görüşmek üzere.
 # Kaynaklar
 - https://www.fermyon.com/blog/webassembly-vs-containers
 - https://webassembly.org/docs/security/
@@ -597,7 +666,15 @@ https://101blockchains.com/web-3-0-blockchain-technology-stack/
 - https://webassembly.org/
 - https://blog.ttulka.com/learning-webassembly-7-introducing-wasi/
 - https://rsms.me/wasm-intro
+- https://medium.com/@rauljordan/webassembly-the-future-of-blockchain-computing-1a0ae28f7e40
 - https://github.com/bytecodealliance/wasmtime/blob/main/docs/WASI-tutorial.md
+- https://www.infoworld.com/article/3678208/why-wasm-is-the-future-of-cloud-computing.html
+- https://koinsaati.com/ethereum-virtual-machine-evm-nedir
+- https://medium.com/hackernoon/games-build-on-webassembly-3679b3962a19
+- https://platform.uno/blog/a-space-shooter-game-on-the-web-with-c-wasm-and-uno-platform/
+- https://www.windley.com/archives/2012/03/protocols_and_metaprotocols_what_is_a_personal_event_network.shtml
+- https://blog.devgenius.io/webassembly-wasm-in-blockchain-f651a8ac767b
+- https://www.preethikasireddy.com/post/the-architecture-of-a-web-3-0-application
 
 
 
