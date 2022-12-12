@@ -574,10 +574,24 @@ Container tarafındaki tek çalışma Docker ile sınırlı değil. Örneğin Ku
 
 Diğer taraftan doğrudan Kubernetes tarafında da çeşitli çalışmalar yapılıyor. Bunlardan bana en iddialı ve yaratıcı olanı [Kruslet](https://github.com/krustlet/krustlet/) geldi. Kruslet WebAssembly çalıştırmak için Rust ile geliştirilmiş tam olarka [Kubelet](https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/)'in işini yapmak için gelişirilmiş bir araç. Container runtime yerine daha önce bahsettiğimiz wasmtime runtime'ını kullanarak WebAssembly pod'larını yönetir.
 
-EKS, GKE, AKS, DigitalOgean, onprem ve diğer platformlar için  kurulum dokümanları mevcut. Test etmek isterseniz alttaki linkleri takip edebilirsiniz.
+EKS, GKE, AKS, DigitalOcean, onprem ve diğer platformlar için  kurulum dokümanları mevcut. Test etmek isterseniz alttaki linkleri takip edebilirsiniz.
 
 - [Minikube ile kurulum](https://docs.krustlet.dev/howto/krustlet-on-minikube/)
 - [MicroK8s ile kurulum](https://docs.krustlet.dev/howto/krustlet-on-microk8s/)
+
+
+## Mobil Dünya
+
+Daha önce bahsettiğimiz [Blazor Framwork](https://dotnet.microsoft.com/en-us/apps/aspnet/web-apps/blazor)'ü ve [Uno Platform](https://platform.uno/) WebAssembly ile nasıl cross platform uygulama geliştirilebileceğini gösteren çok iyi iki örnek. Bunlara benzer WebAssembly daha bir çok framework ve uygulama bulabilirsiniz.
+
+Ancak asıl önemli olan WebAsembly'nin yeterli desteği görmesi şartıyla app store kültürünü değiştirebilcek potansiyelinin olması. Yazılan kodun her platformda çalışması ve WASI ve runtime'lar yardımıyla güvenlik ve sistem kaynalarını kullanabilme yeteneği cihazlarda uygun yapıların sağlanması ile daha zengin uygulamların ve oyunların yazılmasını sağlayabilir. Üstelik bunu bütün programlama dilleriyle yapmak mümkün olabilir. 
+
+- Rust ile geliştirilmiş mobil bir oyun, [Panda Doodle](https://lucamoller.com/posts/2021-07/rewritting-my-mobile-game-in-rust-targeting-wasm): WebAssebly olduğu için tabii ki browserdan da oyananbiliyor. [Şu linkten](https://lucamoller.com/posts/2021-07/rewritting-my-mobile-game-in-rust-targeting-wasm) oyunu oynyabilirsiniz.
+- Paltform Uno'da WebAssembly ile geliştirilmiş mobil destrekli bir başka oyun. Kaynak kodları ile birlikte [şu linkten](https://platform.uno/blog/a-space-shooter-game-on-the-web-with-c-wasm-and-uno-platform/) inceleyebilirsiniz.
+- Unity kullanılarrak WebGL ve WebAssembly ile geliştirilmiş [AngryBots](https://beta.unity3d.com/jonas/AngryBots/) oyunu.
+
+Zaten cross platform uygulama geliştirilebildiğinden bahsetmiştik bu örnek oyunlar da aslında bu dünyada da  birşey yapılabilceğinin kanıtı diyebiliriz.
+ 
 
 ## Blockchain, Web3 ve Diğer Diğer Teknolojiler
 
@@ -601,22 +615,12 @@ Ayrıca bütün bu uygulamaları sadece kendi içinde değil örneğin sadece Ma
 
 Bunu sağlayanda W3C tarafından standartları belirlenmiş olan [ActivityPub](https://www.w3.org/TR/activitypub/) protokolüdür. ActivityPub protokolü, ActivityStreams 2.0 veri formatına dayalı merkezi olmayan bir sosyal ağ protokolüdür. İçerik oluşturmak, güncellemek ve silmek için bir istemciden sunucuya API'nin yanı sıra bildirimler ve içerik iletmek için birleşik bir sunucudan sunucuya API sağlar. 
 
-Tabiiki mevzu sadece sosyal medya ile sınırlı değil. Tabiri caizse tüm web ekosistemi web3 ile birlikte kendi kabuğunu kırmaya, bağımsız olmaya çalışıyor. Tabi burada web3 geldi iddiasında bulunmuyoruz. Daha uzun bir yolu olduğu gerçek ancak oraya giden yolda ekosistem bir değişim yaşıyor. Bu yolda bir çok teknoloji çıkacak bazıları yok olacak bazıları hayatta kalacak.
+Mevzu sadece sosyal medya ile sınırlı değil. Tabiri caizse tüm web ekosistemi web3 ile birlikte kendi kabuğunu kırmaya, bağımsız olmaya çalışıyor. Tabi burada web3 geldi iddiasında bulunmuyoruz. Daha uzun bir yolu olduğu gerçek ancak oraya giden yolda ekosistem bir değişim yaşıyor. Bu yolda bir çok teknoloji çıkacak bazıları yok olacak bazıları hayatta kalacak.
+
+Tabii ki buradaki uygulamalar WebAssembly ile geliştirilmedi. Ancak merkeziyetsiz yapıların gereleceği hakkında bir fikir veriyor. Böyle bir dünyada uygulamaların dağıtımı, uzak makinelere uygun olan yüklerin dağıtımı, hızl ıve güvenli çalıltırma gibi konuların çözümğnde WebAssembly'nin önemli bir bileşen olacağı görülebiliyor.
 
 Evet bu girişten sonra WebAssembly bu dünyaya neler sunabilir onu inceleyelim.
 
-### Mobil Dünya
-
-Daha önce bahsettiğimiz [Blazor Framwork](https://dotnet.microsoft.com/en-us/apps/aspnet/web-apps/blazor)'ü ve [Uno Platform](https://platform.uno/) WebAssembly ile nasıl cross platform uygulama geliştirilebileceğini gösteren çok iyi iki örnek. Bunlara benzer WebAssembly daha bir çok framework ve uygulama bulabilirsiniz.
-
-Ancak asıl önemli olan WebAsembly'nin yeterli desteği görmesi şartıyla app store kültürünü değiştirebilcek potansiyelinin olması. Yazılan kodun her platformda çalışması ve WASI ve runtime'lar yardımıyla güvenlik ve sistem kaynalarını kullanabilme yeteneği cihazlarda uygun yapıların sağlanması ile daha zengin uygulamların ve oyunların yazılmasını sağlayabilir. Üstelik bunu bütün programlama dilleriyle yapmak mümkün olabilir. 
-
-- Rust ile geliştirilmiş mobil bir oyun, [Panda Doodle](https://lucamoller.com/posts/2021-07/rewritting-my-mobile-game-in-rust-targeting-wasm): WebAssebly olduğu için tabii ki browserdan da oyananbiliyor. [Şu linkten](https://lucamoller.com/posts/2021-07/rewritting-my-mobile-game-in-rust-targeting-wasm) oyunu oynyabilirsiniz.
-- Paltform Uno'da WebAssembly ile geliştirilmiş mobil destrekli bir başka oyun. Kaynak kodları ile birlikte [şu linkten](https://platform.uno/blog/a-space-shooter-game-on-the-web-with-c-wasm-and-uno-platform/) inceleyebilirsiniz.
-- Unity kullanılarrak WebGL ve WebAssembly ile geliştirilmiş [AngryBots](https://beta.unity3d.com/jonas/AngryBots/) oyunu.
-
-Zaten cross platform uygulama geliştirilebildiğinden bahsetmiştik bu örnek oyunlar da aslında bu dünyada da  birşey yapılabilceğinin kanıtı diyebiliriz.
- 
 
 ### Blockchain Dünyası
 
