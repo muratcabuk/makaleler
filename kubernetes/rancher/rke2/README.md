@@ -1,6 +1,21 @@
+# RKE 2 ile Kubernetes Cluster Kurulumu, Sertifika Yönetimi ve Backup/Restore İşlemleri
 
 
-### Lab Ortamı Kurulumu
+Merhaba arkadaşlar,
+
+Daha önce "[Rancher Longhorn Distributed Storage Kurulumu, Backup ve Restore İşlemleri](https://medium.com/devopsturkiye/rancher-longhorn-distributed-storage-kurulumu-backup-ve-restore-i%CC%87%C5%9Flemleri-c8f56be457f6)" yazımızda RKE 1 ile Kubernetes cluster kurmuştuk. RKE 2'nin adı bize RKE 1'in üst versiyonu izlenimi veriyor olabilir ancak tamamen farklı bir deployment aracı. Farklarına bakacak olursak
+
+- En önemli farklardan biri Docker kullanmıyor oluşu. RKE 1 bütün kurguyu Docker üzerine kurarak deployment yapıyor.
+- [CNCF'in sitesinden](https://landscape.cncf.io/card-mode?selected=rke-government) bakacak olursanız diğer adının RKE Goverment olduğunu görebilirsiniz. RKE 1' e göre daha fazla güvenlik güvenlik sunuyor. Aslında ilk olarak ABD devlet kurumları için geliştirilmiş bir deployment aracı.
+- Varsayılan konfigürasyonu ile CIS (Center for Internet Security) Kubernetes benchmark'ını geçebilecek şekildedir.
+- [Trivy](https://github.com/aquasecurity/trivy)  ile her build işleminde scan edilir.
+- ABD hükümeti güvenlik standartlarına ([FIPS 140-2](https://docs.rke2.io/security/fips_support)) uygun kodlanır.
+
+Suse'nin amacı yeterli gelişim tamamlandığında RKE 1'den RKE 2'ye geçiş için bir araç sunmak. Mevzuyu [şu sayfadan](https://docs.rke2.io/#why-two-names) da okuyabilirsiniz.
+
+
+
+### RKE 2 ile Kubernetes Kurulumu
 
 ![topology.jpg](files/topology.jpg)
 
@@ -690,8 +705,10 @@ total 124K
 4.0K -rw------- 1 root root  227 Jan  3 18:12 serving-kube-apiserver.key
 4.0K -rw------- 1 root root  227 Jan  3 18:12 serving-kubelet.key
 4.0K drwx------ 2 root root 4.0K Jan  2 10:10 temporary-certs
-
 ```
+
+
+
 
 ### RKE2 ile ETCD Backup Restore İşlemleri
 
@@ -867,6 +884,18 @@ nginx-deployment-before-backup-6b7f675859-5hl6l   1/1     Running   0           
 nginx-deployment-before-backup-6b7f675859-jxq5n   1/1     Running   0              61m
 ```
 Bütün pod'ların geri geldiğini görebiliyoruz.
+
+
+Neler öğrendik?
+
+- RKE2 ile Kubernetes cluster kurduk
+- RKE2 ile Seritifikalarımızı güncelledik
+- RKE2 ile ETCD'nin backup'ını alıp daha sonra cluster'ı restore ettik.
+
+Bu yazımızda bu kadar umarım faydalı olmuştur.
+
+Diğer yazılarımızda görüşmek üzere kendinize iyi bakın.
+
 
 ### Kaynaklar
 - https://docs.rke2.io/install/configuration#configuration-file
