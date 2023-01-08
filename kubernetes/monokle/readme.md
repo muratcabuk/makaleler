@@ -6,7 +6,7 @@ Bu yazımızda Kubernetes cluster'larımızı ve kaynaklarımızı GUI üzerinde
 
 ![mlogo.png](files/mlogo.png)
 
-![monokle](files/Monokle.png)
+![monokle](files/monokle.png)
 
 
 
