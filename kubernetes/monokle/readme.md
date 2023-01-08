@@ -1,4 +1,4 @@
-### Monokle ile Cluster ve Konfigürasyon Yönetimi
+### Monokle Desktop ile Kubetnetes Cluster ve Konfigürasyon Yönetimi
 
 Bu yazımızda Kubernetes cluster'larımızı ve kaynaklarımızı GUI üzerinden yöntebilmemizi sağlayan Monokle adlı aracı inceleyeceğiz.
 
