@@ -1,4 +1,4 @@
-### Monokle Desktop ile Kubetnetes Cluster ve Konfigürasyon Yönetimi
+### Monokle Desktop ile Kubernetes Cluster ve Konfigürasyon Yönetimi 
 
 Bu yazımızda Kubernetes cluster'larımızı ve kaynaklarımızı GUI üzerinden yöntebilmemizi sağlayan Monokle adlı aracı inceleyeceğiz.
 
@@ -217,7 +217,7 @@ Ayrıca ilgili kaynağın üzerine geldiğimizde çıkan 3 nokta ile kaynağı c
 Navigator panelinden bütün kaynakları local'deki manifest/konfigürasyon (yaml) dosyaları içinde tanımlnamış kaynaklarla karşılaştırabiliriz. Örneğin Nemaspace tanımları. pod'lar, network kuralları, storage'lar, controller'lar, RBAC'ler ... vb.
 
 
-### Cluster Karşılaştırmaları
+#### Cluster Karşılaştırmaları
 
 Bunu için ikinci bir cluster'a ihtiyacımız olacak. Bunun için tek yapmamız gereken  daha önce oluşturmuş olduğumuz Kind cluster konfigürasyon doyasını kullanarak ikinci cluster'ı ayağa kaldırmak olacaktır.
 
@@ -258,7 +258,18 @@ Bunun için soldaki menüden Git tab'ına geçiş yapıyoruz. Göndermek istedi�
 ![mt19.png](files/mt19.png)
 
 
-Şimdilik bu kadar. Amacımız Monokle'a bir giriş yapmak, arayüzünü ve yeteneklerini biraz keşfetmekti. Ancak Monokle bu kadar değil tabii ki. [Kustomize](https://kubeshop.github.io/monokle/kustomize/) ve [Helm](https://kubeshop.github.io/monokle/helm/) başlıklarını da okumanızı tavsiye ederim. Özellikle birden fazla cluster yönetiyorsanız ve kaynklarınızı Git üzerinde tutuyorsanız işini yeterince yapan bir araç.
+#### Monokle ile Validation
+
+Monokle sadece syntax anlamında validation yapmıyor. Aynı zamanda best practice'lerin, güvenlik standartlarının da doğrulamasını yapıyor.
+
+![m14.png](files/m14.png)
+
+Validation'ı 5 farklı teknikle yapıyor. 
+
+- **Open Policy Agent (OPA)**: Bu araç aslında [CNCF](https://www.cncf.io/) tarafından onaylanmış bir araç. Custom policy oluşturmak için kendi dili (Rego) var. [AquaSec](https://www.aquasec.com/) firmasının defsec takımının OPA üzerinde Rego ile yazdıkları [güvenlik kurallarını](https://github.com/aquasecurity/defsec) işletiyor.
+- [Custom Resource Definition Schemas](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/): Eğer sisteminizde kullandığınız CRD'ler varsa bunların schema linklerini verdiğinizde bu şemalara göre konfigürasyonlar valide edilebilir.
+
+Diğerleri zaten tahmin edilebildiği için detaylarına girmiyorum.  Şimdilik bu kadar. Amacımız Monokle'a bir giriş yapmak, arayüzünü ve yeteneklerini biraz keşfetmekti. Ancak Monokle bu kadar değil tabii ki. [Kustomize](https://kubeshop.github.io/monokle/kustomize/) ve [Helm](https://kubeshop.github.io/monokle/helm/) başlıklarını da okumanızı tavsiye ederim. Özellikle birden fazla cluster yönetiyorsanız ve kaynklarınızı Git üzerinde tutuyorsanız işini yeterince yapan bir araç.
 
 Umarım faydalı olmuştur.
 
