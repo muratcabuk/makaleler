@@ -17,6 +17,9 @@ Suse'nin amacı yeterli gelişim tamamlandığında RKE 1'den RKE 2'ye geçiş i
 
 ### RKE 2 ile Kubernetes Kurulumu
 
+
+
+
 ![topology.jpg](files/topology.jpg)
 
 
