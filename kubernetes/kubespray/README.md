@@ -106,7 +106,9 @@ for i in $(seq 1 $WORKER_COUNT); do
 done
 
 echo "$BASTION_IP bastion" >>/etc/hosts
-echo "$BASTION_IP mycluster.kubernetes.local" >>/etc/hosts
+echo "$BASTION_IP cluster1.k8s.com" >>/etc/hosts
+echo "$BASTION_IP extlb1.k8s.com" >>/etc/hosts
+echo "$BASTION_IP k8s.com" >>/etc/hosts
 
 
 ALLSCRIPT
@@ -437,25 +439,49 @@ alttaki şekle getiriyoruz.
 
 ```yaml
 
-## External LB example config
-apiserver_loadbalancer_domain_name: "mykubecluster.com"
+## External LB example config. aşağıda DNS serverlardan biride local makinemiz bu durumda loca
+apiserver_loadbalancer_domain_name: "extlb1.k8s.com"
 loadbalancer_apiserver:
    address: 192.168.56.31
    port: 6443
 
 
-# altttki ip adreslerini gerçek ortamda yer alan DNS sunucu ip adreslerinizle değiştirebilirsiniz.clear
+# altttki ip adreslerini gerçek ortamda yer alan DNS sunucu ip adreslerinizle değiştirebilirsiniz. mesela ben bastşon sunucusunu dns olarka kullanıor osaydım onu eklemeliydim. hatta diğer 2 ip adresini kaldırma da gerekirdi kapalı ortamlarda. beni dışarıdaki ip adreslerine bile iç sistemdeki dns çıkartmalı
 upstream_dns_servers:
+   #- 192.168.56.31
    - 8.8.8.8
    - 8.8.4.4
 
 
 ```
 
+elimizde hazır bir dns olmadı için alttaki domainleri bütün sunucularımızın host dosyalarına eklemeliyiz.
+
+bunu zaten Vagranfile dosyamızda alttaki satırlarla yapmıştık.
+
+```shell
+echo "$BASTION_IP cluster1.k8s.com" >>/etc/hosts
+echo "$BASTION_IP extlb1.k8s.com" >>/etc/hosts
+echo "$BASTION_IP k8s.com" >>/etc/hosts
+```
+
+
+
+Aynı zamanda aslında bütün makinelerimizi de geröek ortamda alttaki gibi isimlendirip dns den de erişileblir yapmamız lazım bu bir best practice. Aşağıda cluster adını _cluster1.k8s.com_ olarka ayarlamıştık. cluster adının başına makine adı gelmeli. Ancak biz burada sadece root domain girmeden sadce master1, master2 vb girdik. Ancak normalde alttaki gibi olmalıydı.
+
+
+yani temel kural şu mümkünse makine adı da dns kaydı da alttaki gibi olmalı. Ancak makine adı (hostname) bazen kurallar gereği bu şekilde yazılamayabiliyor makinelere. Bu durumda sadece DNS üzerinden alttaki gibi makinelere erişim yapılabiliyor olması yeterli. Makinelerin hosts dosylarına da yazılabilir. 
+
+```yml
+- master1.cluster1.k8s.com
+- master2.cluster1.k8s.com
+- master3.cluster1.k8s.com
+- worker1.cluster1.k8s.com
+- worker2.cluster1.k8s.com
+- worker3.cluster1.k8s.com
+```
 
 Daha sonra _inventory/mycluster/group_vars/k8s_cluster/addons.yml_ dosyasında alttaki ayarları yapıyoruz.
-
-
 
 
 ```yaml
@@ -480,7 +506,7 @@ argocd_enabled: true
 
 ```
 
-Cluster adını ve proxy modunu  değişirelim. Bunun için _inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml_ dosyasında alttaki değişikliği yapıyoruz. Burad şuna dikkat etmemiz gerekiyor. Geröek oramda hakikaten _kubernetes.mykubecluster.com_ adında bir dns kaydı olmalı. Genellikle com yerine gerçek ortamlarda _cluster.local_ şeklinde olur. eğer mümkünse gerçek ortamlarda buraya özel forward lookup zoe kurulmalı. Hatta PTR kayıtları bile girilmeli. Bu Bölümün altında ayrı bir başlık oalrka bu detaylar incelecenecek.
+Cluster adını ve proxy modunu  değişirelim. Bunun için _inventory/mycluster/group_vars/k8s_cluster/k8s-cluster.yml_ dosyasında alttaki değişikliği yapıyoruz. Burad şuna dikkat etmemiz gerekiyor. Geröek oramda hakikaten _extlb.k8s.com_ adında bir dns kaydı olmalı. Genellikle com yerine gerçek ortamlarda _cluster.local_ şeklinde olur. eğer mümkünse gerçek ortamlarda buraya özel forward lookup zoe kurulmalı. Hatta PTR kayıtları bile girilmeli. Bu Bölümün altında ayrı bir başlık oalrka bu detaylar incelecenecek.
 
 Eğer pod ve service ip'lerini değişrimöek istiyorsak onları da bu dosyadan değiştirmek mümkün. Ayrıca default CNI da bu dosyadan değiştirilebilir. 
 
@@ -501,7 +527,7 @@ container_manager: containerd
 
 # cluster_name: cluster.local
 
-cluster_name: kubernetes.mykubecluster.com
+cluster_name: cluster1.k8s.com
  | 
 
 # Kube-proxy proxyMode configuration.
@@ -532,18 +558,178 @@ ansible-playbook -i inventory/mycluster/hosts.yaml  --become --become-user=root 
 ### Kubespray ile Kubernetes Cluster upgrade
 
 
+- **kubectl cordon komutu**
+
+Bir düğümü kordon altına almak, düğümü programlanamaz hale getirmek anlamına gelir. Bu, Planlanamaz olarak işaretlendiği sürece bu düğümün daha fazla bölmeyi barındıramayacağı anlamına gelir.
+
+- **kubectl drain komutu**
+
+Düğümde bakım yapmadan veya örneğin düğüm sayısını azaltmadan önce tüm bölmelerinizi bir düğümden güvenli bir şekilde çıkarmak için kubectl drain komutunu kullanabilirsiniz. Güvenli tahliyeler, bölmenin podları zarif bir şekilde sonlandırılmasına olanak tanır ve (ilgiliyse) belirttiğiniz PodDisruptionBudgets'a uyar.
+
+
 [Şu dokünman](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/upgrades.md) ile upagrade işlemleri yapılabilir.
+
+Alttaki bileşenleri tek tek de upgrade etmek mümkündür.
+
+- docker_version
+- docker_containerd_version (relevant when container_manager == docker)
+- containerd_version (relevant when container_manager == containerd)
+- kube_version
+- etcd_version
+- calico_version
+- calico_cni_version
+- weave_version
+- flannel_version
+- kubedns_version
 
 
 #### Güvenli Olmayan Upgrade
 
+örneğin kubernetes'i upgrade ederken  node ları drain veya cordon yapmadan çalışırken upgrade etmektir.
+
+Mesela 1.18 den 1.19.7 ye yükseltmek için
+
+```
+ansible-playbook cluster.yml -i inventory/sample/hosts.ini -e kube_version=v1.19.7 -e upgrade_cluster_setup=true
+```
+
 #### Güvenli Upgrade
+
+Burada ise upgrade playbook kullanılır. Bu sayede upgrade edilecek node drain edilir.
+
+
+```
+ansible-playbook upgrade-cluster.yml -b -i inventory/sample/hosts.ini -e kube_version=v1.19.7
+```
 
 
 ### IPVS ve DNS detayları 
 
-local notlarını da eklemeyi unutma
+#### IPVS vs Iptables
 
+IPVS (IP Virtual Server) ve iptables, Linux üzerinde ağ yönlendirme ve firewalling için kullanılan iki farklı araçtır.
+
+IPVS, yüksek performanslı ağ hizmetlerinin sağlanması için kullanılan bir sanal sunucu yönlendirme altyapısıdır. Örneğin, IPVS kullanarak, yük dengeleme veya yüksek erişilebilirlik gerektiren uygulamaların arkasında bir grup sunucu (gerçek sunucular) bulunabilir. IPVS, istekleri belirli bir yönteme (örneğin, Round Robin, Least Connection, Weighted Round Robin vb.) göre gerçek sunucular arasında dağıtır. Bu şekilde, sunucular arasındaki iş yükü dengelenir ve yüksek kullanılabilirlik sağlanır.
+
+Iptables, Linux'ta güvenlik duvarı (firewall) işlevi gören bir araçtır. Iptables kullanılarak, ağ trafiği belirli bir şekilde yönlendirilebilir veya engellenebilir. Örneğin, bir sunucu üzerindeki bazı servislerin sadece belirli IP adreslerinden erişilebilir hale getirilmesi için iptables kullanılabilir. Ayrıca, iptables kullanarak, ağ trafiğinin belirli portlardan geçmesini engellemek veya ağ trafiğini bir sunucudan diğerine yönlendirmek gibi işlemler de gerçekleştirilebilir.
+
+Özetle, IPVS yüksek performanslı ağ hizmetleri için kullanılan bir yönlendirme altyapısı iken, iptables güvenlik duvarı (firewall) işlevi gören bir araçtır. Her ikisi de Linux'ta kullanılabilir ve farklı amaçlar için kullanılırlar.
+
+
+
+Kubernetes cluster'ı için IPVS kullanmanın bazı avantajları şunlardır:
+
+- Yüksek performans: IPVS, yüksek performanslı bir yönlendirme altyapısıdır. IPVS, ağ trafiğinin belirli bir yönteme göre (round-robin, least-connection, weighted-round-robin vb.) gerçek sunuculara yönlendirilmesini sağlar. Bu, ağ trafiğinin hızlı ve dengeli bir şekilde yönlendirilmesini sağlar.
+
+- Daha iyi ölçeklenebilirlik: IPVS, yüzlerce veya binlerce gerçek sunucu (backend) üzerinde çalışabilir ve ağ trafiğini bu sunucular arasında dengeler. Bu ölçeklenebilirlik, Kubernetes cluster'ı büyüdükçe daha önemli hale gelir.
+
+- Daha az CPU kullanımı: IPVS, kernel modülü olarak çalışır ve işlemci kullanımı daha düşüktür. Bu, Kubernetes node'larındaki CPU kaynaklarının daha az tüketilmesini sağlar.
+
+- IPVS modülleri: IPVS, TCP, UDP, SCTP vb. gibi birçok protokolü destekleyen modüller içerir. Bu, farklı ağ hizmetleri için IPVS'nin kullanılmasını kolaylaştırır.
+
+- Session destek: IPVS, TCP bağlantıları için doğru round-robin dengeli dağıtımı sağlar ve UDP trafiği için sesyon özelliklerini destekler. Bu, uygulamaların daha stabil bir şekilde çalışmasını sağlar.
+
+- Kubernetes tarafından desteklenir: IPVS, Kubernetes tarafından resmi olarak desteklenir ve Kubernetes'in kendi load balancing mekanizmalarının bir alternatifi olarak kullanılabilir.
+
+Özetle, Kubernetes cluster'ı için IPVS kullanmanın avantajları, yüksek performans, ölçeklenebilirlik, düşük CPU kullanımı, protokol desteği, session destek ve Kubernetes tarafından desteklenmesidir. Bu avantajlar, Kubernetes cluster'ınızda ağ yönlendirme ve yük dengeleme işlemlerini daha etkili ve verimli hale getirebilir.
+
+
+
+
+Kubernetes için iptables ın comlexity'si O(n) iken ipvs'inki O(1)'dir.
+
+
+
+çok detaylı güzel bir örnek
+
+https://dustinspecker.com/posts/ipvs-how-kubernetes-services-direct-traffic-to-pods/
+
+
+#### DNS - PTR (Eğer bu sistemde bir DNS olsaydı)
+
+tabi eğer DNS ve FDQn işlerin egirilecekse _kubespray/inventory/mycluster/group_vars/all/all.yml_ dosyasında alttki ayaraı da yapmak gerekiyor.
+
+
+```yaml
+# altttki ip adreslerini gerçek ortamda yer alan DNS sunucu ip adreslerinizle değiştirebilirsiniz. mesela ben bastşon sunucusunu dns olarka kullanıor osaydım onu eklemeliydim. hatta diğer 2 ip adresini kaldırma da gerekirdi kapalı ortamlarda. beni dışarıdaki ip adreslerine bile iç sistemdeki dns çıkartmalı
+upstream_dns_servers:
+   #- 192.168.56.31
+   - 8.8.8.8
+   - 8.8.4.4
+
+```
+
+
+
+- **PTR nedir?**
+
+Kısacası, PTR kaydı A kaydının ters bir versiyonu gibidir. A kaydı, etki alanı adını bir IP adresine eşler. PTR ise IP adresini bir ana makine adına eşler. Bununla birlikte, bu iki kayıt bağımsızdır. Örneğin, hostinger.com'un bir kaydı, 21.21.128.xx IP adresini işaret edebilirken, 23.23.128.xx tamamen farklı bir ana makine adına eşleştirilebilir.
+
+Giden posta sunucuları için yararlıdır. Bu kayıt, gönderici sunucu için güvenilirlik katmakta ve alıcı tarafın, IP adresinin hangi ana makineye ait olduğunu kontrol etmesine izin vermektedir. Bu, spam göndermek için kullanan dolandırıcılık alan adlarına karşı mükemmel bir koruma şeklidir. Bu nedenle yahoo.com, gmail.com gibi bazı büyük e-posta sağlayıcıları, gelen e-postaları kabul etmeden önce ters DNS araması yapar.
+
+
+
+- **PTR doğrugelmiyorsa ubuntu netplan üzerinde yapılması geekenler. yada eğer farklı bir zode kuruyorsak bizim gibi ping attığınızda DNS çözülemzse**
+
+
+DNS deki PTR kayıtları da zone gore tam gelmeli. _nslookup ip-adresi_ komutu ile gelen değerde uzun isim görünmeli mesela (master1.k8s.com veya cluster1.k8s.com)
+
+
+linux makinada doğrudan ilgili dns zone uunda arama yapamayabilir bunun için örneğin netplan dosyasında search[] kısımın abu zone ları girmek gerekiyor. Bizde ornğin master1 üzerinde _/etc/netplan/01-netcfg.yaml_ dosyasının içeriğine bakacak olursak alttaki gibi bir yapı gorebiliriz. Ancak bizim yapımızda DNS sunucumuz bastion sunucusu ve orada da arama yapmasını istiyoruz. 
+
+
+```yaml
+ # root@master1:~# cat /etc/netplan/01-netcfg.yaml 
+
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: true
+      dhcp6: false
+      optional: true
+      nameservers:
+        addresses: [4.2.2.1, 4.2.2.2, 208.67.220.220]
+
+```
+
+
+ancak biz 192.168.56.31 (bastşon) da da arama yapmasını istiyorsak alttki gibi ekleme yapmamız gerekiyor (tabi başka bir DNS sunucusu varsa onun ip adresi girilmeli). eğer hostname e kadar arada bir subdomain daha varsa onu daekliyoruz örneğin. cluster1.k8s.com
+
+Alttaki değişikliği bütün sunucularad yapamız gerekiyor.
+
+değişiliği şu dosyada yapıyoruz
+
+_/etc/netplan/01-netcfg.yaml_
+
+
+
+```yaml
+ # root@master1:~# cat /etc/netplan/01-netcfg.yaml 
+
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: true
+      dhcp6: false
+      optional: true
+      nameservers:
+        addresses: [4.2.2.1, 4.2.2.2, 208.67.220.220]
+        search: [192.168.56.31]
+
+```
+
+FDQN onemli hem dns de hem de buraa olursa heryerde PTR larda tam çıkacaktır.
+
+
+
+ilgili sunucuda  _nslookup ip-adresi(veya domain)_ komutu çalıştırdığımızda ilgili ip adresi veya domainin sistemde tanımlı dns sunucularında aranıp bulunması ve sonucusunu getirir.
+
+
+eğer belirli bir dns sunucusunda bu sorguyu yapmak istiyorsak ve dns ipsine arişimimiz varsa  _nslookup ip-adresi dns-ipadresi_ şeklinde de komut çalıştırabilir.
 
 
 ### Nginx External Load Balancer Kurulumu
