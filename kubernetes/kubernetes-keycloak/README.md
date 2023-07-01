@@ -14,10 +14,19 @@ iyi okumalar.
 
 ## Kubetnetes Authentication
 
+Bildiğiğniz üzere Kubetnetes'de gerçek kullanıcılar için bir obje yok. Sadece service account oluşturabiliyoruz. Konu hakkında [resmi dokümanı](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#users-in-kubernetes) da okuyabilirsiniz.  
 
+Peki biz nasıl kubectl ile komutlar çalıştırabiliyoruz? Burada aslında bir kullanıcı olarak değil Kubernetes tarafından onaylanmış bir sertifika ile Kubernetes'e gidiyoruz. Onaylanan bu sertifikada bizim Kubernetes tarafında hangi rollere sahip olduğumuz bilgisini de tutuyor. Konun çok detaylarına girmeyeceğiz amacımız X.509 sertifikası ile kimlik doğrulama yapmak değil. Yani özetle Kubernetes bir kullanıcı veri tabanı yönetmiyor. Zaten genel anlamda da bakacak olursak Kubernetes hiç bir işi kendini yapmıyor aslında Sadece işin kurallarını koyuyor ve bu kurallara ve prensiplere uygun yazılmış araçları birbirleriyle uyumlu çalışabilecekleri bir ortam sunuyor. Kimlik yönetimi de bunlardan biri. 
 
+Kubernetes Authentication [resmi sayfasını](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#users-in-kubernetes) da inceleyecek olursak alttaki stratejileri desteklediğini görebiliriz.
+- X509 Client Certs
+- Static Token File
+- Bootstrap Tokens
+- Service Account Tokens
+- OpenID Connect Tokens
+- Webhook Token Authentication
 
-
+Biz bu makalemizde OpenID Connect Tokens ile kimlik doğrulamanın nasıl yapıldığını göreceğiz.
 ## OpenID Nedir?
 
 OpenID, kullanıcıların çeşitli web sitelerindeki hesaplarını kullanarak tek oturum açma (SSO) sağlayan bir kimlik doğrulama protokolüdür. OpenID, kullanıcıların farklı web sitelerine tek bir kimlikle erişmelerine olanak tanır ve her bir web sitesi için ayrı ayrı kullanıcı adı ve parola hatırlama zorunluluğunu ortadan kaldırır.
@@ -773,11 +782,130 @@ Görüleceği üzere oidc ile ilgili parametreler bizim KinD komutu ile veridiğ
 
 ## Keycloak ile Kubernetes Kimlik Doğrulama
 
-Peki bu yaptığımız ne işimize yaracacak bunu anlamaya çalışalım. Daha önce belirttiğimiz gibi Kubernetes bir kimlik yönetim mekanizması bize sunmuyor. Biz bir role ve bunların yetkileri oluşturabiliriz. Ancak doğrudan user diye bir obje oluşturamıyoruz. 
+Peki bu yaptığımız ne işimize yaracacak bunu anlamaya çalışalım. Daha önce belirttiğimiz gibi Kubernetes bir kimlik yönetim mekanizması bize sunmuyor. Biz bir role ve bunların yetkileri oluşturabiliriz. Ancak doğrudan user diye bir obje oluşturamıyoruz. İşte tam bu noktada Kubernetes'in kimlik yönetimi ve doğruma işlemleri için Keycloak'ı tanımasını sağlayarak kullanıcı oluşturma ve onu ilgili rollere atama işini Keycloak üzerinden yapılamsını sağlamış olacağız.
+
+
+Şu ana kadar yaptıklarımıla aslında entegrasyon işini halletmiş olduk. Şimdi oluşturduğumuz sistemi kullanalım.
+
+
+Öncelikle Keycloak üzerinde oluşturğumuz gruplara uygun Kubernetes tarafında ClusterRole ve ClusterRoleBinding'ler oluşturalım.
+
+Developer-group için ClusterRole ve ClusterRoleBinding oluşturuyoruz.
+
+
+```shell
+
+cat <<EOF | kubectl --kubeconfig ${HOME}/kind/kube.config apply  -f -
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: developer-clusterrole
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces","pods"]
+    verbs: ["get", "watch", "list"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: developer-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: developer-clusterrole
+subjects:
+- kind: Group
+  name: "developer-group"
+  apiGroup: rbac.authorization.k8s.io
+EOF
+
+```
+Admin-group için ClusterRole ve ClusterRoleBinding oluşturuyoruz.
 
 
 
+```shell
 
+cat << EOF | kubectl --kubeconfig ${HOME}/kind/kube.config apply -f -
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: admin-clusterrole
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["clusterroles", "clusterrolebindings"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-clusterrolebinding
+subjects:
+roleRef:
+  kind: ClusterRole
+  name: admin-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: Group
+  name: "admin-group"
+  apiGroup: rbac.authorization.k8s.io
+EOF
+```
+
+Artık Keycloak ile authentication yapabiliriz. Temelde yapmamız gerekenler aslında şu şekilde: Öncelikle Keycloak üzerinde oluşturduğumuz kullanıcılardan biri ile token oluşturacağız, daha sonra bu token bilgisini ve aşağıdaki örnek komutta görülen diğer bilgileri de toplarlayarak kube.config dosyamıza gerekli bilgileri ekleyeceğiz.
+
+```shell
+ kubectl config set-credentials USER_NAME \
+    --auth-provider=oidc \
+    --auth-provider-arg=idp-issuer-url=( issuer url ) \
+    --auth-provider-arg=client-id=( your client id ) \
+    --auth-provider-arg=client-secret=( your client secret ) \
+    --auth-provider-arg=refresh-token=( your refresh token ) \
+    --auth-provider-arg=idp-certificate-authority=( path to your ca certificate ) \
+    --auth-provider-arg=id-token=( your id_token )
+```
+
+Ancak bu işi dah pratik yapmamızı sağlayan oidc-login adında bir plugin de mevcut. Bu plugin sayasnde bütün bu kurguyu çok daha pratik ve hızlı bir şekilde ypabiliyoruz. Bu plugin'i yükleyebilmek için öncelikle krew adında bir plugin yöneticisi yüklememiz gerekiyor. Krew'i yüklemek için aşağıdaki komutu çalıştırıyoruz.
+
+```shell
+(
+  set -x; cd "$(mktemp -d)" &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  KREW="krew-${OS}_${ARCH}" &&
+  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+  tar zxvf "${KREW}.tar.gz" &&
+  ./"${KREW}" install krew
+)
+
+
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+
+source ~/.bashrc
+```
+
+Daha sonra plugin i yükleyebiliriz.
+
+```shell
+kubectl krew install oidc-login
+
+```
+
+Plugin'i alttaki komutla çalıştırıyoruz. Komutu çalıştıdığımızda bir browser açılacak ve bize Keycloak'da daha önce oluşturduğumuz kullanılardan birinin bilgileri igirmemizi izteyecek. Login işlemi bitince de bize hazır bir komut verecek.
+
+```shell
+kubectl --kubeconfig ${HOME}/kind/kube.config oidc-login setup \
+--oidc-issuer-url=https://mykeycloak:8444/realms/Keycloak \
+--oidc-client-id=kubernetes \
+--oidc-client-secret=GiSI4a3Z2rgmxV6G4JIkvcYtIhkJbnGz \
+--certificate-authority=$HOME/ssl/rootCA.pem \
+--insecure-skip-tls-verify
+```
 
 
 
