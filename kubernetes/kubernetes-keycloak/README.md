@@ -584,6 +584,12 @@ Genellikle development ve test ortamlarında Kubernetes kurulumu için Minikube,
 
 Diğer araçlardan farklı olarak bize tem bir Kubernetes cluster'ı veriyor olması. Diğer araçlar ise kısıtlanmış veya belirli amaçlar için optimize edilmiş olduıjlarında Kubernetes için geliştirilen bir çok bileşeni bir addon olarak kısıtlı sunar. Ayrıca hepsi multinode cluster desteği sunmaz. Multinode sunanlardan bazıları mesela Microk8s birden fazla makine ister. Tabi bu bazen iyi bazen kötü olabilir. Ancak ihtiyacımız hızlı kurulup kaldırılabilen, mümkün olduğunca gerçek bir Kubernetes deneyimi sunan, test ve development için kullnabileğimiz bir depoymen aracıysa KinD bize bunu sunuyor.
 
+
+![diagram.png](files/diagram.png)
+[Resim Kaynak](https://kind.sigs.k8s.io/docs/design/initial/)
+
+
+
 KinD ile ilgili detaylı bilgi için [buraya](https://kind.sigs.k8s.io/) bakabilirsiniz.
 
 Öncelikle KinD'ı makinemize kuruyoruz.
