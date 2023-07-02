@@ -5,6 +5,13 @@ Merhaba Arkadaşlar
 
 Bu makalemizde Oauth2 ve OpenId nedir? Keycloak nedir? Keycloak ile Kubernetes kimlik doğrulaması nasıl yapılır? gibi sorulara cevap arayacağız.
 
+Bir oidc provider ile Kubernetes'i entegre etmemizin avantajlarını şöyle sıralayabiliriz.
+
+- Aynı provider'ı kullanarak diğer uygulamalarımıza da aynı kullanıcı ve kullanıcı gruplarını yetkilendirebiliriz.
+- SSO (Single-Sign-On) sistemine dahil olmuş oluruz. Yani Kubernetes'e login olmuş bir kullanıcı yetkili olduğu bütün uygulamalara da login olmuş olur. 
+- Karmaşık kullanıcı oluşturma ve yetkilendirme süreçleri ile uğraşmamış oluruz. Kubernetes cluster'ımıza fazladan iş yaptırmamış oluruz.
+- Daha güvenli bir sistem kurma şansı elde etmiş oluruz. Keycloak ve benzeri sistemler multi factor authentication gibi teknikleri de uygulayabilirler. 
+
 Makaledeki örnekleri yapabilmek için biraz linux, biraz sanallaştırma, Docker ve biraz da Kubernetes bilmek gerekiyor.
 
 Konuyu bölmek istemediğim için biraz uzun bir yazı oldu. Umarım faydalı olur.
@@ -328,6 +335,9 @@ Daha sonra gruplarımızı oluşturalım. developer-group ve admin-group adında
 
 Daha sonra users menüsünden yeni kullanıcılar oluşturuyoruz. admin1use, admin2user, developer1user ve developer2user adında 4 adet kullanıcı oluşturuyoruz.
 
+Alttaki ekranda Email verified'i aktif etmeyi unutmayın. Bu ekran görüntüsünde yapmayı unutmuşum ama siz yapın :). Test ettiğinizde "Unable to authenticate the request" err="[invalid bearer token, oidc: email not verified]" hatası alırsanız sebebi budur. 
+
+
 ![10.png](files/k10.png)
 
 alttaki gibi 4 adet kullanımız olmalı
@@ -584,14 +594,16 @@ chmod +x ./kind
 sudo mv ./kind /bin/kind
 ```
 
-Daha sonra alttaki komutla cluster'ımızı oluşturuyoruz. 3 master ve 3 worker node'dan oluşan cluster'ımız oluşmuş olacak. Daha önce Keycloak container'ımızdan kopyaladığımız sertifikalarımız yer aldığı cert adlı klasörü home dizinimize ssl adıyla kopyalamayı unutmayın. 
+Daha sonra alttaki komutla cluster'ımızı oluşturuyoruz. Daha önce Keycloak container'ımızdan kopyaladığımız sertifikalarımız yer aldığı cert adlı klasörü home dizinimize ssl adıyla kopyalamayı unutmayın. 
 
 Ayrıca home dizininize kind adında bir klasör oluşturuyoruz. 
 
 ```shell
-kind create cluster --kubeconfig=${HOME}/kind/kube.config --name=keycloak-kubernetes --config - <<EOF
+kind create cluster --name=keycloak-kubernetes --config - <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  kubeProxyMode: "ipvs"
 kubeadmConfigPatches:
 - |-
   kind: ClusterConfiguration
@@ -602,26 +614,25 @@ kubeadmConfigPatches:
       oidc-username-claim: email
       oidc-groups-claim: groups
       oidc-ca-file: /etc/ca-certificates/keycloak/rootCA.pem
+    controllerManager:
+      extraArgs:
+        bind-address: 0.0.0.0
+    scheduler:
+      extraArgs:
+        bind-address: 0.0.0.0
 nodes:
 - role: control-plane
   extraMounts:
   - hostPath: ${HOME}/ssl/rootCA.pem
     containerPath: /etc/ca-certificates/keycloak/rootCA.pem
     readOnly: true
-- role: control-plane
+- role: worker
   extraMounts:
   - hostPath: ${HOME}/ssl/rootCA.pem
     containerPath: /etc/ca-certificates/keycloak/rootCA.pem
     readOnly: true
-- role: control-plane
-  extraMounts:
-  - hostPath: ${HOME}/ssl/rootCA.pem
-    containerPath: /etc/ca-certificates/keycloak/rootCA.pem
-    readOnly: true
-- role: worker
-- role: worker
-- role: worker
 EOF
+
 ```
 
 Bu komut ile Kube-apiserver manifest dosyamıza alttaki satırları ekmiş oluyoruz.
@@ -634,7 +645,7 @@ oidc-groups-claim: groups
 oidc-ca-file: /etc/ca-certificates/keycloak/rootCA.pem
 ```
 
-Bu bilgilerin hepsi daha önce curl komutu ile aldığımız token içinde geöen bilgiler. issuer-url bilgisini ise well-known dokümanımızdan alıyoruz. 
+Bu bilgilerin hepsi daha önce curl komutu ile aldığımız token içinde geçen bilgiler. issuer-url bilgisini ise well-known dokümanımızdan alıyoruz. 
 
 KinD docker container'ları üzerine kurulduğu için sertifikamızı mount ederek Kubernetes master node'larımıza bağlamış olduk.
 
@@ -648,116 +659,83 @@ mkdir -p ~/.local/bin
 sudo mv ./kubectl /bin/kubectl
 ```
 
-Kurulum sonrası oluşturulan kobe.config dosyamızın içeriğine bakalım
+Kurulum sonrası oluşturulan config dısyamıza bakalım. Yeni bir cluster eklendiğini görebiliyoruz.
 
 ```shell
 
-cat ${HOME}/kind/kube.config
+cat ${HOME}/.kube/config
 
+--- KISALTILDI
 
-apiVersion: v1
-clusters:
 - cluster:
-    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMvakNDQWVhZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJek1EY3dNVEl4TlRNMU0xb1hEVE16TURZeU9ESXhOVE0xTTFvd0ZURVRNQkVHQTFVRQ---KISALTILDI
-    server: https://127.0.0.1:46127
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMvakNDQWVhZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJek1EY3dNakUwTlRJeU5Wb1hEVE16TURZeU9URTBOVEl5TlZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBSm5mCitTa2hGLzhObk5LbDlrR3VoczVD---KISALTILDI
+    server: https://127.0.0.1:35529
   name: kind-keycloak-kubernetes
-contexts:
-- context:
-    cluster: kind-keycloak-kubernetes
-    user: kind-keycloak-kubernetes
-  name: kind-keycloak-kubernetes
-current-context: kind-keycloak-kubernetes
-kind: Config
-preferences: {}
-users:
-- name: kind-keycloak-kubernetes
-  user:
-    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJVENDQWdtZ0F3SUJBZ0lJV0hDdStPekV3Qnd3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TXpBM01ERXlNVFV6TlROYUZ3MHlOREEyTXpBeU1UVXpOVFJhTURReApGekFWQmdOVkJBb1REbk41YzNS---KISALTILDI
-    client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBb2o1NWc3QU1vWFE3QWxocWwyc0NHdVRNTzd2dEM2KzBMMWdQYUdIUXg2RzVhdkt6CmRvQXhZaGZQNG0yQmN1K3pEYk5DR1BZY2tkUm9sZVBHVmZGV0hpQzh6Mm1rK1o1c2NmZzBkM2wrM1VDbG81VSsKe--- KISALTILDI
+
+--- KISALTILDI
+
 ```
 
-Cluster'ımız için KinD bir Load Balncer oluşturmuş ve bunuda hoıst makinemizin 46127 portuna map etmiş. Container listemize bakcak olursak HaProxy'nin kurulduğunu görebiliriz.
+Container listesine bakacak olursak KinD ile oluştulmuş container'ları  da görebiliriz.
 
 ```shell 
 docker container ls --format "table {{.Image}}\t{{.Names}}\t{{.Ports}}"
-IMAGE                                NAMES                                        PORTS
-kindest/node:v1.27.3                 keycloak-kubernetes-control-plane3           127.0.0.1:46375->6443/tcp
-kindest/node:v1.27.3                 keycloak-kubernetes-worker2
-kindest/node:v1.27.3                 keycloak-kubernetes-worker3
-kindest/node:v1.27.3                 keycloak-kubernetes-control-plane            127.0.0.1:35059->6443/tcp
-kindest/haproxy:v20230606-42a2262b   keycloak-kubernetes-external-load-balancer   127.0.0.1:46127->6443/tcp
-kindest/node:v1.27.3                 keycloak-kubernetes-worker
-kindest/node:v1.27.3                 keycloak-kubernetes-control-plane2           127.0.0.1:39521->6443/tcp
-mykeycloak:latest                    mykeycloak                                   8080/tcp, 0.0.0.0:8444->8443/tcp, :::8444->8443/tcp
-postgres:12-alpine                   mykeycloak-postgres                          5432/tcp
+
+
+IMAGE                  NAMES                               PORTS
+kindest/node:v1.27.3   keycloak-kubernetes-worker
+kindest/node:v1.27.3   keycloak-kubernetes-control-plane   127.0.0.1:35529->6443/tcp
+mykeycloak:latest      mykeycloak                          8080/tcp, 0.0.0.0:8444->8443/tcp, :::8444->8443/tcp
+postgres:12-alpine     mykeycloak-postgres                 5432/tcp
+
+
 ```
-
-kubectl ile komut yazarken config dosyamızı belirtmemiz gerekiyor. Eğer varsa bağlandığınız ve aktif olark kullandığınız cluster'lar config dosyamızın bozulmaması için ve  fazla  komut kullanmayacağımız için config dosyasımızı default dizinde ($HOME/.kube/config) oluşturmadık. 
-
 Basit bir test yapalım. 
 
 ```shell
-kubectl get nodes --kubeconfig ${HOME}/kind/kube.config
-
-NAME                                 STATUS   ROLES           AGE   VERSION
-keycloak-kubernetes-control-plane    Ready    control-plane   24m   v1.27.3
-keycloak-kubernetes-control-plane2   Ready    control-plane   24m   v1.27.3
-keycloak-kubernetes-control-plane3   Ready    control-plane   23m   v1.27.3
-keycloak-kubernetes-worker           Ready    <none>          22m   v1.27.3
-keycloak-kubernetes-worker2          Ready    <none>          22m   v1.27.3
-keycloak-kubernetes-worker3          Ready    <none>          22m   v1.27.3
+kubectl get nodes
+NAME                                STATUS   ROLES           AGE     VERSION
+keycloak-kubernetes-control-plane   Ready    control-plane   3m30s   v1.27.3
+keycloak-kubernetes-worker          Ready    <none>          3m10s   v1.27.3
 
 ```
 
 evet cluster'ımız kurulu görünüyor. Şimdi kube-system namespace'indeki podları listelemeye çalışalım.
 
 ```shell
-NAME                                                         READY   STATUS    RESTARTS      AGE
-coredns-5d78c9869d-8lhrj                                     1/1     Running   0             24m
-coredns-5d78c9869d-grdfl                                     1/1     Running   0             24m
-etcd-keycloak-kubernetes-control-plane                       1/1     Running   0             24m
-etcd-keycloak-kubernetes-control-plane2                      1/1     Running   0             24m
-etcd-keycloak-kubernetes-control-plane3                      1/1     Running   0             23m
-kindnet-7p29h                                                1/1     Running   0             24m
-kindnet-97kkh                                                1/1     Running   0             23m
-kindnet-hpbp7                                                1/1     Running   0             23m
-kindnet-hplbf                                                1/1     Running   0             24m
-kindnet-mdwxf                                                1/1     Running   0             23m
-kindnet-scwmv                                                1/1     Running   0             23m
-kube-apiserver-keycloak-kubernetes-control-plane             1/1     Running   0             24m
-kube-apiserver-keycloak-kubernetes-control-plane2            1/1     Running   1 (24m ago)   24m
-kube-apiserver-keycloak-kubernetes-control-plane3            1/1     Running   1 (23m ago)   22m
-kube-controller-manager-keycloak-kubernetes-control-plane    1/1     Running   1 (24m ago)   24m
-kube-controller-manager-keycloak-kubernetes-control-plane2   1/1     Running   0             24m
-kube-controller-manager-keycloak-kubernetes-control-plane3   1/1     Running   0             22m
-kube-proxy-4282l                                             1/1     Running   0             23m
-kube-proxy-6wm5v                                             1/1     Running   0             24m
-kube-proxy-gthdb                                             1/1     Running   0             23m
-kube-proxy-h4s2z                                             1/1     Running   0             23m
-kube-proxy-h68ch                                             1/1     Running   0             23m
-kube-proxy-sr6rn                                             1/1     Running   0             24m
-kube-scheduler-keycloak-kubernetes-control-plane             1/1     Running   1 (24m ago)   24m
-kube-scheduler-keycloak-kubernetes-control-plane2            1/1     Running   0             24m
-kube-scheduler-keycloak-kubernetes-control-plane3            1/1     Running   0             22m
+
+kubectl get pods -n kube-system
+
+NAME                                                        READY   STATUS    RESTARTS   AGE
+coredns-5d78c9869d-kbwbp                                    1/1     Running   0          4m11s
+coredns-5d78c9869d-sscfp                                    1/1     Running   0          4m11s
+etcd-keycloak-kubernetes-control-plane                      1/1     Running   0          4m25s
+kindnet-bpdwd                                               1/1     Running   0          4m10s
+kindnet-zcd4n                                               1/1     Running   0          4m8s
+kube-apiserver-keycloak-kubernetes-control-plane            1/1     Running   0          4m24s
+kube-controller-manager-keycloak-kubernetes-control-plane   1/1     Running   0          4m24s
+kube-proxy-gx7pj                                            1/1     Running   0          4m8s
+kube-proxy-zwknn                                            1/1     Running   0          4m10s
+kube-scheduler-keycloak-kubernetes-control-plane            1/1     Running   0          4m24s
 ```
 
-kube-apiserver pod'larımız 3 tane olduğunu görebiliyoruz. bunlardan herhangi birinin detaylarını inceleyelim.
+kube-apiserver pod'umuzun detaylarını inceleyelim.
 
 ```shell
-kubectl describe pods kube-apiserver-keycloak-kubernetes-control-plane   -n kube-system --kubeconfig ${HOME}/kind/kube.config
+kubectl describe pods kube-apiserver-keycloak-kubernetes-control-plane -n kube-system
 
 --- KISALTILDI
 
 Containers:
 kube-apiserver:
-Container ID:  containerd://f716882f5695181a19b60ed80dbe60238ee6e99a7d536be5e21a8741e5390c03
+Container ID:  containerd://a7dcf6ffd581246c23eadd46db40eadc18b23281e8e18e2b6a5388bcd54445b0
 Image:         registry.k8s.io/kube-apiserver:v1.27.3
 Image ID:      docker.io/library/import-2023-06-15@sha256:0202953c0b15043ca535e81d97f7062240ae66ea044b24378370d6e577782762
 Port:          <none>
 Host Port:     <none>
 Command:
 kube-apiserver
---advertise-address=172.21.0.6
+--advertise-address=172.21.0.2
 --allow-privileged=true
 --authorization-mode=Node,RBAC
 --client-ca-file=/etc/kubernetes/pki/ca.crt
@@ -775,6 +753,23 @@ kube-apiserver
 --oidc-groups-claim=groups
 --oidc-issuer-url=https://mykeycloak:8444/realms/Keycloak
 --oidc-username-claim=email
+--proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt
+--proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key
+--requestheader-allowed-names=front-proxy-client
+--requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt
+--requestheader-extra-headers-prefix=X-Remote-Extra-
+--requestheader-group-headers=X-Remote-Group
+--requestheader-username-headers=X-Remote-User
+--runtime-config=
+--secure-port=6443
+--service-account-issuer=https://kubernetes.default.svc.cluster.local
+--service-account-key-file=/etc/kubernetes/pki/sa.pub
+--service-account-signing-key-file=/etc/kubernetes/pki/sa.key
+--service-cluster-ip-range=10.96.0.0/16
+--tls-cert-file=/etc/kubernetes/pki/apiserver.crt
+--tls-private-key-file=/etc/kubernetes/pki/apiserver.key
+State:          Running
+Started:      Sun, 02 Jul 2023 17:52:33 +0300
 
 --- KISALTILDI
 ```
@@ -795,7 +790,7 @@ Developer-group için ClusterRole ve ClusterRoleBinding oluşturuyoruz.
 
 ```shell
 
-cat <<EOF | kubectl --kubeconfig ${HOME}/kind/kube.config apply  -f -
+cat <<EOF | kubectl apply  -f -
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -826,7 +821,7 @@ Admin-group için ClusterRole ve ClusterRoleBinding oluşturuyoruz.
 
 ```shell
 
-cat << EOF | kubectl --kubeconfig ${HOME}/kind/kube.config apply -f -
+cat << EOF | kubectl apply -f -
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -870,7 +865,7 @@ Artık Keycloak ile authentication yapabiliriz. Temelde yapmamız gerekenler asl
     --auth-provider-arg=id-token=( your id_token )
 ```
 
-Ancak bu işi dah pratik yapmamızı sağlayan oidc-login adında bir plugin de mevcut. Bu plugin sayasnde bütün bu kurguyu çok daha pratik ve hızlı bir şekilde ypabiliyoruz. Bu plugin'i yükleyebilmek için öncelikle krew adında bir plugin yöneticisi yüklememiz gerekiyor. Krew'i yüklemek için aşağıdaki komutu çalıştırıyoruz.
+Ancak bu işi daha pratik yapmamızı sağlayan oidc-login adında bir plugin de mevcut. Bu plugin sayasnde bütün bu kurguyu çok daha pratik ve hızlı bir şekilde ypabiliyoruz. Bu plugin'i yükleyebilmek için öncelikle krew adında bir plugin yöneticisi yüklememiz gerekiyor. Krew'i yüklemek için aşağıdaki komutu çalıştırıyoruz.
 
 ```shell
 (
@@ -889,23 +884,177 @@ export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 source ~/.bashrc
 ```
 
-Daha sonra plugin i yükleyebiliriz.
+Daha sonra plugin'i yükleyebiliriz.
 
 ```shell
-kubectl krew install oidc-login
+  kubectl krew install oidc-login
 
 ```
 
-Plugin'i alttaki komutla çalıştırıyoruz. Komutu çalıştıdığımızda bir browser açılacak ve bize Keycloak'da daha önce oluşturduğumuz kullanılardan birinin bilgileri igirmemizi izteyecek. Login işlemi bitince de bize hazır bir komut verecek.
+Plugin'i alttaki komutla çalıştırıyoruz. Komutu çalıştıdığımızda bir browser açılacak ve bize Keycloak'da daha önce oluşturduğumuz kullanılardan birinin bilgileri girmemizi isteyecek. Login işlemi bitince de bize hazır bir komut verecek. Bu komuu kullnarak kube.config dosyamızı güncelleyeceğiz.
 
 ```shell
-kubectl --kubeconfig ${HOME}/kind/kube.config oidc-login setup \
+kubectl oidc-login setup \
 --oidc-issuer-url=https://mykeycloak:8444/realms/Keycloak \
 --oidc-client-id=kubernetes \
 --oidc-client-secret=GiSI4a3Z2rgmxV6G4JIkvcYtIhkJbnGz \
 --certificate-authority=$HOME/ssl/rootCA.pem \
 --insecure-skip-tls-verify
 ```
+
+
+Komut çalıştırıldığında açılan sayfada kullanıcı adı ve şifremizi girdikten sonra alttaki gibi sonuç aldık. Dönen token bilgisine dikkat edecek olursak group  bölümünde Keycloak'da oluşturduğumuz ve kullanıcımızı atadığımız group bilgisi görünüyor. Bu grubu ayrıca ClusterRoleBinging (admin-clusterrolebinding) içinde tanımlamıştık. Bu sayede kullanıcımızın cluster içindeki yetkilerini de belirlemiş olduk. Kullanıcımız Keycloak tarafından verify edildikten sonra Kubernetes'e dönen token bilgisinde group bilgisi de yer aldığından ve bu bilginin Kubernetes tarafından okunmasını kube-apiserver konfigürasyonunda belirttiğimiz için Kubernetes ilgili rolu kullanıcımıza atayacak.
+
+```shell
+## 2. Verify authentication
+
+You got a token with the following claims:
+
+{
+"exp": 1688287386,
+"iat": 1688287086,
+"auth_time": 1688286890,
+"jti": "2263a3e5-8b78-450b-bf3e-c49edd80f24f",
+"iss": "https://mykeycloak:8444/realms/Keycloak",
+"aud": "kubernetes",
+"sub": "f53687e2-26ef-48ff-94c1-f872c6842581",
+"typ": "ID",
+"azp": "kubernetes",
+"nonce": "MoxYCXQ1XzClqtTSnkVvl38RLvsIzc8EwtJcVeEXgbk",
+"session_state": "ba5f3e07-bfd2-44f9-806d-457dfcc3b6c9",
+"at_hash": "hoMQl5skcdpMf9c57u0IaQ",
+"acr": "0",
+"sid": "ba5f3e07-bfd2-44f9-806d-457dfcc3b6c9",
+"email_verified": true,
+"name": "admin1 user",
+"groups": [
+"admin-group"
+],
+"preferred_username": "admin1user",
+"given_name": "admin1",
+"family_name": "user",
+"email": "admin1user@mail.com"
+}
+
+## 3. Bind a cluster role
+
+Run the following command:
+
+kubectl create clusterrolebinding oidc-cluster-admin --clusterrole=cluster-admin --user='https://mykeycloak:8444/realms/Keycloak#f53687e2-26ef-48ff-94c1-f872c6842581'
+
+## 4. Set up the Kubernetes API server
+
+Add the following options to the kube-apiserver:
+
+--oidc-issuer-url=https://mykeycloak:8444/realms/Keycloak
+--oidc-client-id=kubernetes
+
+## 5. Set up the kubeconfig
+
+Run the following command:
+
+kubectl config set-credentials oidc \
+--exec-api-version=client.authentication.k8s.io/v1beta1 \
+--exec-command=kubectl \
+--exec-arg=oidc-login \
+--exec-arg=get-token \
+--exec-arg=--oidc-issuer-url=https://mykeycloak:8444/realms/Keycloak \
+--exec-arg=--oidc-client-id=kubernetes \
+--exec-arg=--oidc-client-secret=GiSI4a3Z2rgmxV6G4JIkvcYtIhkJbnGz \
+--exec-arg=--certificate-authority=/home/muratcabuk/ssl/rootCA.pem \
+--exec-arg=--insecure-skip-tls-verify
+
+## 6. Verify cluster access
+
+Make sure you can access the Kubernetes cluster.
+
+kubectl --user=oidc get nodes
+
+You can switch the default context to oidc.
+
+kubectl config set-context --current --user=oidc
+
+You can share the kubeconfig to your team members for on-boarding.
+```
+
+
+Biz 5. maddeye kadar olan adımları aslında yaptık. Tek yapmamız gereken 5. maddedeki komutu kubeconfig dosyamızın yolulunu belirterek çalıştırmak.
+
+```shell
+kubectl --kubeconfig ${HOME}/kind/kube.config config set-credentials oidc \
+--exec-api-version=client.authentication.k8s.io/v1beta1 \
+--exec-command=kubectl \
+--exec-arg=oidc-login \
+--exec-arg=get-token \
+--exec-arg=--oidc-issuer-url=https://mykeycloak:8444/realms/Keycloak \
+--exec-arg=--oidc-client-id=kubernetes \
+--exec-arg=--oidc-client-secret=GiSI4a3Z2rgmxV6G4JIkvcYtIhkJbnGz \
+--exec-arg=--certificate-authority=/home/muratcabuk/ssl/rootCA.pem \
+--exec-arg=--insecure-skip-tls-verify
+
+# Komut çalıştırılsığında alttaki sonucu alıyor olmalıyız.
+
+# User "oidc" set.
+```
+
+kube.config dosyasmızın içerğine bakacak olursak alttaki gibi bir bölümün eklendiğini göreceğiz.
+
+```yaml
+- name: oidc
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - oidc-login
+      - get-token
+      - --oidc-issuer-url=https://mykeycloak:8444/realms/Keycloak
+      - --oidc-client-id=kubernetes
+      - --oidc-client-secret=GiSI4a3Z2rgmxV6G4JIkvcYtIhkJbnGz
+      - --certificate-authority=/home/kullaniciadiniz/ssl/rootCA.pem
+      - --insecure-skip-tls-verify
+      command: kubectl
+      env: null
+      provideClusterInfo: false
+```
+
+Şimdi oidc kullanıcı ayarlarımızı kullanarak bazı işlemleri yapmayı deneyelim.
+
+
+```shell
+kubectl get namespace --user oidc
+
+NAME                 STATUS   AGE
+default              Active   139m
+kube-node-lease      Active   139m
+kube-public          Active   139m
+kube-system          Active   139m
+local-path-storage   Active   139m
+```
+
+Eğer session'ınımız kapandıysa bu komut ile browser açılacak ve bizden yetkili bir kullanıcı adı ve şifre isteyecek. Eğer kullanıcımız namespace listesini almaya yetkiliyse namespace listesini alabileceğiz. Hatırlarsanız admin kullanıcılarımıza namespace listesi alma yetkisi vermiştik.
+
+Eğer hata ile karşılaaşırsanız aşağıdaki yöntemleri deneyeiniz.
+
+- Keycloak OIDC sağlayıcınızın doğru şekilde yapılandırıldığından emin olun. oidc-issuer-url, oidc-client-id, oidc-username-claim, oidc-groups-claim ve oidc-ca-file gibi ayarlarınızın doğru olduğundan emin olun. Keycloak yönetim panelinde doğru kullanıcılar ve gruplar oluşturulduğundan emin olun.
+
+- Kubectl komutunu çalıştırdığınızda kullandığınız kubeconfig dosyasını kontrol edin. Doğru bir şekilde yapılandırıldığından ve OIDC sağlayıcısıyla uyumlu olduğundan emin olun. kubeconfig dosyasında doğru kullanıcı kimlik bilgileri (token, cert, key vb.) olduğundan emin olun.
+
+- Keycloak üzerinde oluşturduğunuz kullanıcıların ve grupların, Kubernetes rolleri ve rollerin atandığı kullanıcı ve grupların doğru şekilde yapılandırıldığından emin olun. Kullanıcılara ve gruplara gerekli rolleri ve izinleri atadığınızdan emin olun.
+
+- Keycloak OIDC sağlayıcısıyla entegrasyonu doğrulamak için kubectl yerine curl veya benzeri bir araç kullanarak OIDC sağlayıcısıyla doğrulama isteği yapabilirsiniz. Bu şekilde, kullanıcının OIDC sağlayıcısıyla başarılı bir şekilde kimlik doğrulaması yapılıp yapılmadığını kontrol edebilirsiniz.
+
+- KinD yapılandırmasında, API sunucusu, kontrol yöneticisi ve scheduler için doğru OIDC ayarlarının yapılandırıldığından emin olun. Yaptığınız değişikliklerin KinD kümesine başarıyla uygulandığından emin olun.
+
+- Kubernetes API sunucusunun loglarını kontrol edin. Bu loglarda herhangi bir hata veya uyarı mesajı bulunuyor mu? API sunucusunun Keycloak ile iletişim kurarken herhangi bir hata yaşamadığından emin olun.
+
+- Ağ erişimini kontrol edin: Kubernetes API sunucusu ve Keycloak arasındaki ağ erişimini kontrol edin. Her iki hizmetin de aynı ağda veya ağa erişebilir durumda olduğundan emin olun. Ayrıca, API sunucusu ile Keycloak arasındaki güvenlik grupları veya ağ politikalarını kontrol edin. Gerekli portların açık olduğundan ve trafikin engellenmediğinden emin olun.
+
+- SSL/TLS sertifikalarını kontrol edin: Keycloak ile API sunucusu arasındaki güvenli iletişim için kullanılan SSL/TLS sertifikalarını kontrol edin. Keycloak'un kullandığı sertifika (oidc-ca-file) ve API sunucusunun kullandığı sertifikaların (ca.crt) geçerli olduğunu ve birbirini doğrulayabileceğini doğrulayın.
+
+Umarım faydalı olmuştur. Kendinize iyi bakın
+
+Diğer yazılarmızda görüşmek üzere.
+
 
 
 
