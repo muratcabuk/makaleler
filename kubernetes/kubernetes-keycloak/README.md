@@ -967,7 +967,7 @@ kubectl config set-credentials oidc \
 --exec-arg=--oidc-issuer-url=https://mykeycloak:8444/realms/Keycloak \
 --exec-arg=--oidc-client-id=kubernetes \
 --exec-arg=--oidc-client-secret=GiSI4a3Z2rgmxV6G4JIkvcYtIhkJbnGz \
---exec-arg=--certificate-authority=/home/muratcabuk/ssl/rootCA.pem \
+--exec-arg=--certificate-authority=/home/kullanici_adiniz/ssl/rootCA.pem \
 --exec-arg=--insecure-skip-tls-verify
 
 ## 6. Verify cluster access
@@ -995,7 +995,7 @@ kubectl --kubeconfig ${HOME}/kind/kube.config config set-credentials oidc \
 --exec-arg=--oidc-issuer-url=https://mykeycloak:8444/realms/Keycloak \
 --exec-arg=--oidc-client-id=kubernetes \
 --exec-arg=--oidc-client-secret=GiSI4a3Z2rgmxV6G4JIkvcYtIhkJbnGz \
---exec-arg=--certificate-authority=/home/muratcabuk/ssl/rootCA.pem \
+--exec-arg=--certificate-authority=/home/kullanici_adiniz/ssl/rootCA.pem \
 --exec-arg=--insecure-skip-tls-verify
 
 # Komut çalıştırılsığında alttaki sonucu alıyor olmalıyız.
