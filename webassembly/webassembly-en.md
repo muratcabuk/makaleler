@@ -294,9 +294,6 @@ WASI core provides a structure similar to POSIX. If we want to access a director
 ![wasi2.png](files/wasi2.png)
 [source](https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/)
 
-İlgili kaynak için yaptığımız talep sadece o kaynak için verilir ve istenirse bu kısıtlanabilir. Ayrıca verilen bu izin sadece talep eden modüle verilir yani toptan bütün WebAssembly'ye verilmez. 
-
-
 The permission granted for a specific resource in the context of capability-based security is given exclusively to the requested resource, and if desired, it can be restricted. Furthermore, this permission is granted only to the requesting module and is not granted universally to all of WebAssembly.
 
 ![wasi3.png](files/wasi3.png)
@@ -445,9 +442,7 @@ const importObject = {
 
 ```
 
-Let's run our code.
-
-```javascript
+Let's run the code.
 
 ```javascript
 node --experimental-wasi-unstable-preview1 wasi-node.js
@@ -513,14 +508,15 @@ const startWasiTask =
 // Everything starts here
 startWasiTask(wasmFilePath)
 ```
-[kaynak](https://docs.wasmer.io/integrations/js/wasi/browser/examples/hello-world)
+[source](https://docs.wasmer.io/integrations/js/wasi/browser/examples/hello-world)
 
 
 
 I believe the examples provided are sufficient for understanding the topic.
 
 
-## Container Dünyasında WebAssembly
+## Container World and WebAssembly
+
 
 Certainly, let's start with Solomon Hykes, the creator of Docker, and his tweets on the subject. You can find his tweets on this topic in the following [link](https://twitter.com/solomonstre/status/1111004913222324225).
 
@@ -540,7 +536,7 @@ However, unlike containers, a WebAssembly module doesn't come bundled with a pre
 
 
 ![container-wa.png](files/container-wa.png)
-[resim kanak](https://cosmonic.com/product/)
+[source](https://cosmonic.com/product/)
 
 Certainly, we can see that WebAssembly offers a much more lightweight structure. The fact that isolation is provided through a sandbox on the runtime results in a solution that is not only lighter but also faster and more controllable. While Solomon mentioned that WebAssembly may not replace Docker or containers, with the ongoing development of WebAssembly, we may witness various changes in container technologies in the future.
 
@@ -591,8 +587,8 @@ On the other hand, there are various ongoing efforts directly within Kubernetes.
 Installation documentation is available for EKS, GKE, AKS, DigitalOcean, on-premises, and other platforms. If you want to try it out, you can follow the links below.
 
 
-- [Minikube ile kurulum](https://docs.krustlet.dev/howto/krustlet-on-minikube/)
-- [MicroK8s ile kurulum](https://docs.krustlet.dev/howto/krustlet-on-microk8s/)
+- [Installation with Minikube](https://docs.krustlet.dev/howto/krustlet-on-minikube/)
+- [Installation with MicroK8s](https://docs.krustlet.dev/howto/krustlet-on-microk8s/)
 
 
 ## Mobile World and WebAssembly
@@ -613,7 +609,7 @@ However, what is most important is the potential of WebAssembly to change the ap
 As we mentioned earlier, since cross-platform application development is possible, these example games can be considered proof of that.
  
 
-## Blockchain, Web3 and Other Tecknologies
+## Blockchain, Web3 and Other Technologies
 
 
 Another project related to WebAssembly is the microservice framework developed by Fermyon. You can get detailed information about the framework (Spin) by visiting the [quickstart page](https://developer.fermyon.com/spin/quickstart/).
@@ -625,6 +621,8 @@ From a technological development perspective, Steve Jobs' viewpoint makes sense.
 I anticipate that those who disagree with this idea might raise objections, but from a technological advancement perspective, we can see the validity of Steve Jobs' thinking. Perhaps he changed his mind later; I don't know. Today, we are stuck with Apple and Google app stores. Billions of dollars are generated from them.
 
 Nevertheless, despite all this, the tech ecosystem is trying to chart its own path. Many events and increasing awareness about personal data rights and the consciousness of individuals and countries have led to the rapid development of decentralized structures. The use of decentralized social media platforms has significantly increased, especially after Elon Musk's acquisition of Twitter and the subsequent developments. You can find some examples in the list below:
+
+
 ![decentralization.png](files/decentralization.png)
 
 
