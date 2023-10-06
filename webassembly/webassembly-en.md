@@ -260,7 +260,7 @@ As mentioned earlier, it's also possible to use WebAssembly modules developed in
 Furthermore, with WASI, your application can communicate over the network and even publish web pages using the HTTP protocol. A small web server has been created using the WasmEdge runtime. You can check out the example project in [this link](https://wasmedge.org/book/en/write_wasm/rust/networking.html).
 
 
-## WebAssembly Güvenlik Konusu
+## WebAssembly Security
 
 WebAssembly offers robust security isolation. Modules run in their own isolated (sandboxed) environment, separate from the host runtime. When running within a browser runtime, it strictly adheres to the browser's security policies. However, outside of the browser, it operates using capability-based security. In its simplest form, capability-based security allows the caller to determine how much authority each WASM module should have.
 
