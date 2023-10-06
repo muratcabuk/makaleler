@@ -1,4 +1,4 @@
-# Everything all about he WebAssembly
+# Everything All About WebAssembly
 
 
 In this article, we will talk about WebAssembly, which has been frequently mentioned in recent years.
@@ -225,7 +225,7 @@ Moreover, with the ability to run outside of browsers, it is possible to run on 
 
 There is a text format available for writing WebAssembly (WASM), and it can be converted into WASM. However, developing in this way can be challenging, so there are different implementations available for each programming language.
 
-![wasm.png](files/wasm.png)
+![wasm_en.png](files/wasm_en.png)
 
 The file extension for the text format is '.wat', while the binary format uses '.wasm'. You can use the following command to convert from the text format to binary. For more details, you can visit [this page](https://webassembly.org/getting-started/advanced-tools/)."
 
