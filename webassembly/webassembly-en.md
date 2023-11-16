@@ -623,6 +623,7 @@ I anticipate that those who disagree with this idea might raise objections, but 
 Nevertheless, despite all this, the tech ecosystem is trying to chart its own path. Many events and increasing awareness about personal data rights and the consciousness of individuals and countries have led to the rapid development of decentralized structures. The use of decentralized social media platforms has significantly increased, especially after Elon Musk's acquisition of Twitter and the subsequent developments. You can find some examples in the list below:
 
 
+
 ![decentralization.png](files/decentralization.png)
 
 
