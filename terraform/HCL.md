@@ -702,7 +702,7 @@ Bu örnekte, `aws_instance` kaynağı 3 kez oluşturulacaktır. `count` değerin
 
 
 
-## **Modüller**
+## Modüller
 
 HCL (özellikle Terraform) yapılandırmalarında çok önemli bir rol oynar ve altyapı kodlarının **yeniden kullanılabilir**, **modüler** ve **daha yönetilebilir** olmasını sağlar. Modüller, bir veya birden fazla kaynak, değişken veya çıkıştan oluşabilir ve bu modüller başka bir yapılandırma dosyasında kolayca kullanılabilir. Modüller, özellikle büyük ve karmaşık altyapı yönetiminde büyük fayda sağlar.
 
@@ -1368,5 +1368,13 @@ Alttaki gibi bir sonuç görmemiz gerekiyor.
 ![example5.png](files/example5.png)
 
 
-Evet bu yazımızında sonuna geldik. Umarım faydalı olmuştur. Bir sonraki yazımızda Terraform'u inceleyeğiz ve Azure üzerinden örnekler yapacağız.
+## Fonksiyon Kullanımı
 
+HCL içinde kullnabilceğimiz bit çok fonksiyon varBunların içinde numeric, string, collection, encoding, file system, date-time, ip network, hash ve crypto, type conversion fonsksiyonları yer alır.
+
+Detaylı örnklerle kullanımlarını [resmi sayfasında](https://developer.hashicorp.com/terraform/language/functions) bulabilirsiniz.
+
+
+
+
+Evet bu yazımızında sonuna geldik. Umarım faydalı olmuştur. Bir sonraki yazımızda Terraform'u inceleyeğiz ve Azure üzerinden örnekler yapacağız.
