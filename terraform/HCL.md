@@ -1370,11 +1370,8 @@ Alttaki gibi bir sonuç görmemiz gerekiyor.
 
 ## Fonksiyon Kullanımı
 
-HCL içinde kullnabilceğimiz bit çok fonksiyon varBunların içinde numeric, string, collection, encoding, file system, date-time, ip network, hash ve crypto, type conversion fonsksiyonları yer alır.
+HCL içinde kullnabilceğimiz bir çok fonksiyon var. Bunların içinde numeric, string, collection, encoding, file system, date-time, ip network, hash ve crypto, type conversion fonsksiyonları yer alır.
 
 Detaylı örnklerle kullanımlarını [resmi sayfasında](https://developer.hashicorp.com/terraform/language/functions) bulabilirsiniz.
-
-
-
 
 Evet bu yazımızında sonuna geldik. Umarım faydalı olmuştur. Bir sonraki yazımızda Terraform'u inceleyeğiz ve Azure üzerinden örnekler yapacağız.
