@@ -1,2 +1,33 @@
- 
-TODO
+# Server-Side Render mı, Client-side render mı? Hangisini hangi durumda tercih etmeliyiz?
+
+Server-Side Rendering (SSR) ve Client-Side Rendering (CSR), web sayfalarının kullanıcılara nasıl sunulduğunu belirleyen iki farklı yaklaşımdır. SSR, sayfa içeriğinin sunucuda hazırlanıp tamamen işlenmiş halde istemciye (tarayıcıya) gönderildiği bir tekniktir. Kullanıcı bir sayfa talep ettiğinde, sunucu tüm HTML yapısını oluşturur ve tarayıcıya gönderir. Bu sayede, tarayıcı sayfayı daha hızlı bir şekilde görüntüler. SEO açısından büyük avantaj sağlar, çünkü arama motorları sayfanın tam HTML yapısına erişebilir. Next.js (React için) ve Nuxt.js (Vue.js için), Nest.js, Asp.net MVC, Java Spring MVC, Django, Ruby on Rails, Lavarel gibi popüler framework’ler SSR için yaygın olarak kullanılır. Ayrıca, kullanıcının sayfayı ilk defa yüklemesi daha hızlıdır, çünkü içeriğin tamamı sunucu tarafından gönderilmiş olur. Mesela Umbraco, Joomla, WordPress gibi CMS’ler SSR ile çalışır.
+
+CSR ise, sayfanın temel HTML yapısının tarayıcıya gönderildiği ve ardından JavaScript’in tarayıcıda çalışarak sayfanın kalan içeriğini oluşturduğu bir tekniktir. Bu yöntem, genellikle kullanıcı etkileşimi yoğun olan web uygulamalarında tercih edilir. CSR, sayfa yüklenirken JavaScript dosyalarının tarayıcı tarafından indirilmeye ve işlenmeye başlamasını bekler, bu nedenle ilk sayfa yükleme süresi daha uzun olabilir. Ancak sayfa yüklendikten sonra, CSR ile sayfanın parçaları daha hızlı güncellenebilir çünkü tam sayfa yeniden yüklenmez, yalnızca gerekli veriler ve bileşenler yenilenir. Angular, React ve Vue.js gibi framework’ler, CSR’ı etkin bir şekilde kullanır.
+
+Her iki yaklaşımın da kendine özgü avantajları ve zorlukları vardır. SEO ve ilk yükleme hızı kritik olduğunda SSR, daha dinamik ve interaktif kullanıcı deneyimleri sağlamak istendiğinde ise CSR tercih edilebilir. Bu iki yaklaşım, modern web geliştirme çerçevelerinde, proje ihtiyaçlarına göre uyarlanabilir. Bu uygulamalar sonucunda bir de hybrid yöntemler gelişmiştir. Farklı şekilleri var var ama en basit haliyle bazı sayfaların ilk açılışlarını SSR ile yapıp sayfa içindeki değişiklikleri CSR yönetmek şeklinde tanımlama yapabiliriz. Yani hangi işi hangi teknikle yapmak daha efektifse o yolu tercih etmektir. Hybrid çözümlere kesinlikle CSR frameworklerinin (Angular, Vue vb) SSR çözümlerini dahil etmiyoruz. Bunlar tamamen günü kurtarmak. Sadece html taglerinin sunucu tarafında render edilmesini sağlıyor ve asla gerçek bir SSR deneyimi sunmuyor. Bunu zaten dünya üzerinde özellikle içerik üreten ve e-ticaret yapan bütün sitlerde gerçekten SSR kullanılmasından anlayabilirsiniz. Çoğu sadece gerekli durumlarda AJAX kullanıyor.
+
+Peki hangi durumlarda hangisini tercih etmeliyiz? Bu sorunun cevabı inetnette yıllardır forumlarda tartışılır. Bir iş frontend ile ilgili ise kesinlikle CSR, backend ise kesinlikle SSR olmalıdır diye basit kuralı veya bir best practice’i yok ancak deneyimlerle veya framework’lerin kendilerini konumladıkları yerler iyi incelenerek bulunan bazı temek kriterler var. Bunlardan bazılarını altta listeliyorum.
+
+- SEO İhtiyaçları: Arama motorlarının sayfanızı tam olarak tarayabilmesi kritikse, SSR tercih edilmeli. SSR, tarayıcıya tam HTML sunar, bu da SEO açısından avantaj sağlar.
+- İlk Yükleme Süresi: Kullanıcıların sayfayı ilk ziyaretlerinde hızlı bir deneyim sunmak istiyorsanız, SSR kullanın. Sayfanın tam hali sunucudan render edilip gelir, bu da ilk yüklemeyi hızlandırır.
+- Dinamik Etkileşim: Yoğun kullanıcı etkileşimi gerektiren ve sürekli veri güncellemesi yapan uygulamalarda CSR daha uygundur. CSR, sayfanın her seferinde yeniden yüklenmesi yerine bileşenlerin anlık güncellenmesini sağlar.
+- Düşük Performanslı Cihazlar: Zayıf donanımlı cihazlarda kullanıcıların deneyimlerini optimize etmek için SSR tercih edin. SSR, sayfa yükleme süresini cihazın gücüne bırakmadan sunucuda halleder.
+- Karmaşık Müşteri Tarafı Mantığı: Müşteri tarafında yoğun JavaScript işlemleri olan uygulamalar için CSR daha uygundur. CSR, kullanıcı tarafındaki etkileşimleri hızlı ve akıcı tutar.
+- İçerik Sıklıkla Güncelleniyorsa: Eğer sürekli olarak değişen ve sık güncellenen dinamik içerikler varsa, CSR tercih edilmelidir. Sayfa tamamıyla yeniden render edilmeden sadece değişen parçalar güncellenir.
+- Önbellek ve CDN Kullanımı: SSR, önceden render edilmiş HTML’lerin CDN’ler aracılığıyla kolayca önbelleğe alınmasını sağlar, bu da büyük ölçekli global uygulamalarda performansı artırır.
+- JavaScript Rendering Problemleri: Eğer uygulamanız eski veya kısıtlı tarayıcılar için de destek sağlamak zorundaysa, SSR kullanmak mantıklıdır. Bazı ortamlar (örneğin, e-posta önizlemeleri) JavaScript çalıştırmakta sınırlı olabilir.
+- Sunucu Maliyeti ve Karmaşıklık: Basit projelerde ve düşük maliyetli altyapılarda CSR daha uygundur. CSR, her kullanıcının talebine göre sunucu tarafında sürekli render gerektirmez.
+- Yüksek Ölçeklenebilirlik: Büyük kullanıcı kitlesine hitap eden uygulamalarda SSR, cache mekanizmaları ile performans iyileştirmesi sağlar, ancak çok dinamik uygulamalarda bu karmaşıklık yaratabilir. CSR, bu tür uygulamalarda daha esnek olabilir.
+- Güvenlik İhtiyaçları: Hassas veri işleyen uygulamalarda SSR, sayfa yüklemeleri sırasında client tarafına daha az veri gönderdiği için güvenlik açısından tercih edilebilir. Ancak, güvenlik genel olarak her iki mimariyle de sağlanabilir.
+- Offline Kullanım İhtiyacı: CSR, kullanıcıların internet bağlantısı olmadan da bazı özellikleri kullanabilmelerini sağlar. Uygulamanızda bu tür bir senaryo varsa CSR tercih edilebilir.
+- Kullanıcı Deneyimi Optimizasyonu: Eğer amacınız kullanıcıya daha etkileşimli, anlık geri dönüşlerle dolu bir deneyim sunmaksa CSR daha uygun olabilir. Sayfa yeniden yüklenmeden değişiklikler gerçekleşir ve daha pürüzsüz bir deneyim yaratır.
+
+Özetleyecek olursak;
+
+- Eğer bir web, haber, e-ticaret vb içerik odaklı bir web sitesi yapıyorsak SSR kullanmalıyız. İçerik çok olsa da önemli değil. Eğer amacımız bir içeriği kullanıcıya sunmak ve onun odaklanmasını ve okumasını sağlamaksa kesinlikle SSR kullanılmalı.
+- Onlarca sayfası olan, ekranlarında bol miktarda kontrolün olduğu ve kullanıcı etkilerişimine çok ihitiyaç duyulan bir uygulama geliştirilecekse CSR kullanmalıyız.
+Daha da özetleyecek olursak :) Web sitesi yapıyorsak SSR, uygulama yapıyorsak CSR kullanmalıyız.
+
+Son olarak bir de “[Hafif Programming](https://www.youtube.com/watch?v=3bn6cgaIjME&t=251s)” Youtube kanalından bir video paylaşayım. Konuyu bir örnek üzerinden çok daha iyi anlatmışlar.
+
+Umarım faydalı olmuştur. Diğer yazılamızda görüşmek üzere kendinize iyi bakın.
