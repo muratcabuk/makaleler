@@ -1,5 +1,12 @@
 # Ansible Collection ile Kişisel Linux Sistem ve Dotfiles Otomasyonu
 
+
+Bu  yazımızda birden fazla farklı Linux dağıtımı için Ansible ile hem uygulamarımızın yönetimini hem de dotfile'larımızı nasıl yöntebilceğimizi öğrenmeye çalışacağız. Amacımız full bir sitemden ziya de bir başlangıç oluşturmak. Açık yalın bir yapı kurup isteğimize göre genişletebilceğimiz bir örnek yapmış olacağız.
+
+
+![kapak.webp](files/kapak.webp)
+
+
 Yazıyı anlamak ve örnekleri çalıştırabilmek için biraz Ansible bilmek gerekiyor. Amacımız Ansible öğrenmekten ziyade Ansible'ı kişisel sistemlerimizde nasıl kullnacağımız konusunda basit bir örnek yapmak.
 
 Yazıda ayrıca Ansible'in özelliklerinden biri olan Colleciton yapısını da görüyor olacağız. Temelde amacımız sıfırdan bir Linux dağıtımı kurduğumuzda kullanığımız uygulamaların kurulmasını ve bütün ayarlarımızın da yapılmasını sağlamak. Hatta mümkünse farklı dağıtımlarda da çalıştırabilmek. 
