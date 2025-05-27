@@ -1,0 +1,13 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for roles/vscode
+
+vscode_extensions_present: # yüklemek istediklerimiz
+  - ms-python.python
+  - redhat.ansible
+  - github.copilot
+  - esbenp.prettier-vscode
+  - yzhang.markdown-all-in-one
+  - github.vscode-github-actions
+vscode_extensions_absent: ## yüklü ise kaldırmak istediklerimiz
+  - hashicorp.terraform

@@ -1,0 +1,98 @@
+---
+- name: Setup Ubuntu systems # inventory dosyasımızda birden fazla Ubuntu sisttemi kurabilceğimizi belirtmiştik
+  hosts: ubuntu_hosts
+  gather_facts: yes
+  connection: local
+  become_method: sudo
+  become: yes  # sudo yetkisi için
+  collections:
+    - my_namespace.my_machines # istenirse klasör yapısındak farklı bişr isim de kullanılabilir. galaxy.xml dosyası üzerinden ayarlanabiliyor.
+    # sadece kendi collection'ımızı kullanıyoruz.
+  vars:
+    target_distribution: Ubuntu
+    system_users:
+      - username: developer
+        shell: /bin/zsh # developer kullanıcısı için zsh shell
+      - username: admin 
+        shell: /bin/bash # admin kullanıcısı için bash shell
+    excluded_packages: # Rollerde ilerde varsayılan peketleri kuracağız ama onlardan kurmak istemediğimiz varsa buradan yönetelim istiyoruz.
+      - vim
+    install_ohmyzsh: true # zsh için ohmyzsh temasının yüklneip yüklenmeyeceğini belirlemek için bir ayar.
+
+
+  pre_tasks:
+    - name: Verify target distribution # kurulum başlamadan önce kurulum yapacağımız makinenin ubuntu lup olamdığını kontrol ediyoruz.
+      fail:
+        msg: "Kurulum yapacağınız makine Ubuntu olmalıdır" 
+      when: ansible_distribution != target_distribution
+
+  roles:  # amacımız alttaki rolleri kurmak.
+    - my_namespace.my_machines.base_setup # bütün dağıtımlarda minimum olmasını istediğimiz paketler, kullanıcıların oluşturlması ve diğer ayalar.
+    - my_namespace.my_machines.common_packages # genelö paketler
+    - my_namespace.my_machines.zsh # zsh ın kurlumu ve dotfile'ların yönetimi için role
+    - my_namespace.my_machines.vscode # vscode ve extension'ların kurlumu ve ayaları 
+
+######################## Örnek Archlinux konfigürasyonu ##########################
+- name: Setup Arch Linux systems
+  hosts: arch_hosts
+  gather_facts: yes
+  connection: local
+  become_method: sudo
+  become: yes  # sudo yetkisi için
+  collections:
+    - my_namespace.my_machines
+  vars:
+    target_distribution: Archlinux
+    system_users:
+      - username: developer
+        shell: /bin/zsh # developer kullanıcısı için zsh shell
+      - username: admin 
+        shell: /bin/bash # admin kullanıcısı için bash shell
+    excluded_packages:
+      - vim
+    install_ohmyzsh: true
+
+  pre_tasks:
+    - name: Verify target distribution
+      fail:
+        msg: "Kurulum yapacağınız makine Archlinux olmalıdır"
+      when: ansible_distribution != target_distribution
+
+  roles:
+    - my_namespace.my_machines.base_setup
+    - my_namespace.my_machines.common_packages
+    - my_namespace.my_machines.zsh
+    - my_namespace.my_machines.vscode
+
+######################## Örnek Fedora konfigürasyonu ##########################
+
+- name: Setup Fedora systems
+  hosts: fedora_hosts
+  gather_facts: yes
+  connection: local
+  become_method: sudo
+  become: yes  # sudo yetkisi için
+  collections:
+    - my_namespace.my_machines
+  vars:
+    target_distribution: Fedora
+    system_users:
+      - username: developer
+        shell: /bin/zsh # developer kullanıcısı için zsh shell
+      - username: admin 
+        shell: /bin/bash # admin kullanıcısı için bash shell
+    excluded_packages:
+      - vim
+    install_ohmyzsh: true
+
+  pre_tasks:
+    - name: Verify target distribution
+      fail:
+        msg: "Kurulum yapacağınız makine Fedora olmalıdır"
+      when: ansible_distribution != target_distribution
+
+  roles:
+    - my_namespace.my_machines.base_setup
+    - my_namespace.my_machines.common_packages
+    - my_namespace.my_machines.zsh
+    - my_namespace.my_machines.vscode

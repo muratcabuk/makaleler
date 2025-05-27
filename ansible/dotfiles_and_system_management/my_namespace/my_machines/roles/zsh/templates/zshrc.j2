@@ -1,0 +1,39 @@
+# Path to Oh My Zsh installation
+export ZSH="{{ user_homes[item.username] }}/.oh-my-zsh"
+
+# Set theme
+ZSH_THEME="robbyrussell"
+
+# Define plugins
+plugins=(
+    git
+    zsh-autosuggestions
+    zsh-syntax-highlighting
+)
+
+# Set common options
+HYPHEN_INSENSITIVE="true"
+ENABLE_CORRECTION="true"
+COMPLETION_WAITING_DOTS="true"
+
+# History settings
+HIST_STAMPS="yyyy-mm-dd"
+HISTSIZE=10000
+SAVEHIST=10000
+HISTFILE=~/.zsh_history
+
+# Load Oh My Zsh
+source $ZSH/oh-my-zsh.sh
+
+# User configuration
+export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+if [[ -n $SSH_CONNECTION ]]; then
+    export EDITOR='vim'
+else
+    export EDITOR='vim'
+fi
+
+# Compilation flags
+export ARCHFLAGS="-arch $(uname -m)"

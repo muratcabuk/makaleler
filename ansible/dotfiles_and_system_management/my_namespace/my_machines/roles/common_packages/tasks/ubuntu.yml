@@ -1,0 +1,5 @@
+- name: Install common packages for Ubuntu
+  apt:
+    name: "{{ common_packages | difference(excluded_packages | default([])) }}"
+    state: present
+    update_cache: yes

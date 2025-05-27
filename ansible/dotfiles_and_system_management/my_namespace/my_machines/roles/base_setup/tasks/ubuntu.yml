@@ -1,0 +1,17 @@
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install base packages
+  apt: # base_packages da tanımlı ve playbook'da exclude edilmeiş paketleri kuruyoruz.
+    name: "{{ base_packages | difference(excluded_packages | default([])) }}"
+    state: present
+
+- name: Create system users # sistem_users da tanımlı kullanıcı listesini dolaşıp kullanıcıları oluşturuyoruz.
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    groups: "{{ system_groups[item.username] }}"
+    shell: "{{ item.shell }}"
+    create_home: yes
+  loop: "{{ system_users }}"

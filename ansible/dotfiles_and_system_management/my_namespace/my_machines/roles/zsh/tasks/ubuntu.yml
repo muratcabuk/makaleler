@@ -1,0 +1,4 @@
+- name: Install zsh packages
+  apt:
+    name: "{{ zsh_packages }}"
+    state: present
