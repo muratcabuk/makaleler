@@ -1,0 +1,13 @@
+common_packages:
+  - git
+  - vim
+  - curl
+  - wget
+  - htop
+  - ffmpeg
+  - jq
+  - tree
+  - unzip
+  - zip
+  - tmux
+  - net-tools

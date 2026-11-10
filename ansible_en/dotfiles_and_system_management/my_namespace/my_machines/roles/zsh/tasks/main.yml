@@ -1,0 +1,46 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/zsh
+
+
+
+- name: Include distribution specific variables
+  include_vars: "{{ ansible_distribution | lower }}.yml"
+
+- name: Include distribution specific tasks
+  include_tasks: "{{ ansible_distribution | lower }}.yml"
+
+- name: Install zsh and dependencies
+  package:
+    name: "{{ zsh_packages }}"
+    state: present
+
+- name: Get user home directory # we set each user's home directory as a fact. This way, it becomes accessible from all tasks.
+  ansible.builtin.set_fact:
+    user_homes: "{{ user_homes | default({}) | combine({ item.username: '/home/' + item.username }) }}"
+  loop: "{{ system_users }}"
+
+- name: Install Oh My Zsh # oh-my-zsh is being downloaded for all users.
+  ansible.builtin.git:
+    repo: https://github.com/ohmyzsh/ohmyzsh.git
+    dest: "{{ user_homes[item.username] }}/.oh-my-zsh"
+  loop: "{{ system_users }}"
+  when: install_ohmyzsh | default(true)
+  become: false
+
+- name: Deploy .zshrc configuration file # while our template file zshrc.j2 is copied for each user, the system_users item in the loop is passed to the template file. 
+  ansible.builtin.template:
+    src: zshrc.j2
+    dest: "{{ user_homes[item.username] }}/.zshrc"
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0644'
+  loop: "{{ system_users }}"
+  when: item.shell == '/bin/zsh'
+
+- name: Set zsh as default shell
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    shell: /bin/zsh
+  loop: "{{ system_users }}"
+  when: item.shell == '/bin/zsh'

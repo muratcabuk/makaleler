@@ -1,0 +1,42 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/vscode
+
+
+- name: Include distribution specific variables   # the vars for the distribution are being loaded
+  include_vars: "{{ ansible_distribution | lower }}.yml"
+
+- name: Include distribution specific tasks       # the task for the distribution is being loaded
+  include_tasks: "{{ ansible_distribution | lower }}.yml"
+
+- name: Install VS Code extensions
+  become: no  # don't try to run as root
+  ansible.builtin.shell: |
+    code --no-sandbox --user-data-dir=/home/{{ item.0.username }}/.vscode --install-extension {{ item.1 }}
+  register: vscode_ext_install
+  changed_when: "'successfully installed' in (vscode_ext_install.stdout | default(''))" # if the shell stdout output says "successfully installed", it means the extension was installed successfully.
+  failed_when: 
+    - vscode_ext_install.rc is defined   # that is, did the shell command run?
+    - vscode_ext_install.rc != 0  # if the shell ran, is the result different from zero? that is, is there an error?
+    - "'already installed' not in (vscode_ext_install.stderr | default(''))" # # if "already installed" isn't in the shell error output, then it means there really is an error. 
+  with_nested:
+    - "{{ system_users }}" # we install it separately for each user
+    - "{{ vscode_extensions_present | default([]) }}"
+  environment:
+    DISPLAY: ":0" # the code --install-extension command may want access to the GUI in the background. We're installing via the shell, so we're giving the command permission to use the GUI. If we don't use this, some extensions may give errors during installation. If we definitely won't use it, that is, if we'll do the installation entirely via the shell, then we can also download the vsix packages and install them with a script. 
+
+- name: Uninstall VS Code extensions
+  become: no  # don't try to run as root
+  ansible.builtin.shell: |
+    code --no-sandbox --user-data-dir=/home/{{ item.0.username }}/.vscode --uninstall-extension {{ item.1 }}
+  register: vscode_ext_uninstall
+  changed_when: "'successfully uninstalled' in (vscode_ext_uninstall.stdout | default(''))"
+  failed_when:
+    - vscode_ext_uninstall.rc is defined
+    - vscode_ext_uninstall.rc != 0
+    - "'is not installed' not in (vscode_ext_uninstall.stderr | default(''))"
+  with_nested:
+    - "{{ system_users }}"
+    - "{{ vscode_extensions_absent | default([]) }}" # state'i absend olanlar uninstall ediliyor.
+  environment:
+    DISPLAY: ":0"

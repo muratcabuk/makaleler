@@ -1,0 +1,15 @@
+- name: Add VS Code repository key
+  apt_key:
+    url: "{{ vscode_repository_key }}"
+    state: present
+
+- name: Add VS Code repository
+  apt_repository:
+    repo: "{{ vscode_repository }}"
+    state: present
+
+- name: Install VS Code
+  apt:
+    name: "{{ vscode_package }}"
+    state: present
+    update_cache: yes

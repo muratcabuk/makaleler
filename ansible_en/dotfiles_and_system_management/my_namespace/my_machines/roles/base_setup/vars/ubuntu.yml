@@ -1,0 +1,8 @@
+system_groups:
+  admin: sudo
+  developer: sudo
+base_packages:
+  - sudo
+  - build-essential
+  - man-db
+  - bash-completion

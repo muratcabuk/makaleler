@@ -1,0 +1,13 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/base_setup
+- name: Get system information
+  ansible.builtin.setup:
+    gather_subset:
+      - distribution # we provide the distribution information with the target_distribution variable in the playbook
+
+- name: Include distribution specific variables # we load the distribution variables for the related distribution.
+  include_vars: "{{ ansible_distribution | lower }}.yml"
+
+
+# if desired, tasks can also be added for other work related to this role to be done on all distributions.

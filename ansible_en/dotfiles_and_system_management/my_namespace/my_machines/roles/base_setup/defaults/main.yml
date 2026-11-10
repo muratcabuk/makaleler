@@ -1,0 +1,16 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for roles/base_setup
+system_users:
+  - username: admin
+    groups: wheel,sudo
+    shell: /bin/bash
+
+excluded_packages: []
+
+base_packages:
+  - vim
+  - git
+  - curl
+  - wget
+  - htop

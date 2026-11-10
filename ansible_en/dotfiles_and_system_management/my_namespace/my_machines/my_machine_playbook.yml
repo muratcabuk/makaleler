@@ -1,0 +1,98 @@
+---
+- name: Setup Ubuntu systems # we had mentioned that we can set up more than one Ubuntu system in our inventory file
+  hosts: ubuntu_hosts
+  gather_facts: yes
+  connection: local
+  become_method: sudo
+  become: yes  # for sudo privileges
+  collections:
+    - my_namespace.my_machines # if desired, a different name than the folder structure can also be used. It can be configured via the galaxy.xml file.
+    # we're only using our own collection.
+  vars:
+    target_distribution: Ubuntu
+    system_users:
+      - username: developer
+        shell: /bin/zsh # zsh shell for the developer user
+      - username: admin 
+        shell: /bin/bash # bash shell for the admin user
+    excluded_packages: # Later in the roles we'll install default packages, but if there are any of them we don't want to install, we want to manage that from here.
+      - vim
+    install_ohmyzsh: true # a setting to determine whether the ohmyzsh theme for zsh will be installed or not.
+
+
+  pre_tasks:
+    - name: Verify target distribution # before the installation starts, we check whether the machine we'll install on is ubuntu or not.
+      fail:
+        msg: "The machine you are installing on must be Ubuntu" 
+      when: ansible_distribution != target_distribution
+
+  roles:  # our goal is to install the roles below.
+    - my_namespace.my_machines.base_setup # packages we want to have at minimum on all distributions, creation of users and other settings.
+    - my_namespace.my_machines.common_packages # general packages
+    - my_namespace.my_machines.zsh # role for installing zsh and managing dotfiles
+    - my_namespace.my_machines.vscode # installation and settings of vscode and extensions 
+
+######################## Example Archlinux configuration ##########################
+- name: Setup Arch Linux systems
+  hosts: arch_hosts
+  gather_facts: yes
+  connection: local
+  become_method: sudo
+  become: yes  # for sudo privileges
+  collections:
+    - my_namespace.my_machines
+  vars:
+    target_distribution: Archlinux
+    system_users:
+      - username: developer
+        shell: /bin/zsh # zsh shell for the developer user
+      - username: admin 
+        shell: /bin/bash # bash shell for the admin user
+    excluded_packages:
+      - vim
+    install_ohmyzsh: true
+
+  pre_tasks:
+    - name: Verify target distribution
+      fail:
+        msg: "The machine you are installing on must be Archlinux"
+      when: ansible_distribution != target_distribution
+
+  roles:
+    - my_namespace.my_machines.base_setup
+    - my_namespace.my_machines.common_packages
+    - my_namespace.my_machines.zsh
+    - my_namespace.my_machines.vscode
+
+######################## Example Fedora configuration ##########################
+
+- name: Setup Fedora systems
+  hosts: fedora_hosts
+  gather_facts: yes
+  connection: local
+  become_method: sudo
+  become: yes  # for sudo privileges
+  collections:
+    - my_namespace.my_machines
+  vars:
+    target_distribution: Fedora
+    system_users:
+      - username: developer
+        shell: /bin/zsh # zsh shell for the developer user
+      - username: admin 
+        shell: /bin/bash # bash shell for the admin user
+    excluded_packages:
+      - vim
+    install_ohmyzsh: true
+
+  pre_tasks:
+    - name: Verify target distribution
+      fail:
+        msg: "The machine you are installing on must be Fedora"
+      when: ansible_distribution != target_distribution
+
+  roles:
+    - my_namespace.my_machines.base_setup
+    - my_namespace.my_machines.common_packages
+    - my_namespace.my_machines.zsh
+    - my_namespace.my_machines.vscode
